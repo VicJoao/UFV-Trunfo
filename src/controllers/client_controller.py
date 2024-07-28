@@ -29,10 +29,6 @@ class ClientController:
             self.view.display_user_cards(self.user.get_cards())
         elif option == 3:
             self.edit_deck()
-        elif option == 4:
-            self.start_server()
-        elif option == 5:
-            self.find_server()
         else:
             self.view.display_message("Invalid option")
         self.menu()
@@ -125,11 +121,3 @@ class ClientController:
         except IndexError:
             self.view.display_message("Invalid option")
             self.edit_deck()
-
-    def start_server(self):
-        self.view.display_message("Starting server")
-        self.client_model.start_server()
-
-    def find_server(self):
-        self.view.display_message("Finding server")
-        self.client_model.find_server()

@@ -6,18 +6,6 @@ class ClientView:
         print("1 - Create new card")
         print("2 - Print all cards")
         print("3 - Edit Deck")
-        print("4 - Start server")
-        print("5 - Find server")
-
-    def get_server_option(self):
-        return int(input("Option: "))
-
-    def get_server_name(self):
-        return input("Enter the server name: ")
-
-    def get_server_port(self):
-        return int(input("Enter the server port: "))
-
 
     def get_option(self):
         return int(input("Option: "))

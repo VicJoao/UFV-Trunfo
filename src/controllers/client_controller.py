@@ -2,13 +2,13 @@ import sys
 from models.client_model import ClientModel
 from views.client_view import ClientView
 from models.user import User
-from controllers.conection import Conection
+from controllers.conection import Connection
 class ClientController:
     def __init__(self, client_db):
         self.client_db = client_db
         self.user = User()
         self.view = ClientView()
-        self.conection = Conection()
+        self.conection = Connection()
 
         try:
             self.client_model = ClientModel(self.client_db)
@@ -34,7 +34,7 @@ class ClientController:
         elif option == 4:
             self.conection.scan()
         elif option == 5:
-            self.conection.create_server()
+            self.conection.create_server(input("Enter server name: "))
         else:
             self.view.display_message("Invalid option")
         self.menu()

@@ -121,3 +121,8 @@ class ClientController:
         except IndexError:
             self.view.display_message("Invalid option")
             self.edit_deck()
+
+    def process_message(self, message):
+        print(message + "Foi recebida no DB")
+
+        return message

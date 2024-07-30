@@ -2,11 +2,13 @@ import sys
 from models.client_model import ClientModel
 from views.client_view import ClientView
 from models.user import User
+from controllers.conection import Conection
 class ClientController:
     def __init__(self, client_db):
         self.client_db = client_db
         self.user = User()
         self.view = ClientView()
+        self.conection = Conection()
 
         try:
             self.client_model = ClientModel(self.client_db)
@@ -29,6 +31,10 @@ class ClientController:
             self.view.display_user_cards(self.user.get_cards())
         elif option == 3:
             self.edit_deck()
+        elif option == 4:
+            self.conection.scan()
+        elif option == 5:
+            self.conection.create_server()
         else:
             self.view.display_message("Invalid option")
         self.menu()
@@ -44,6 +50,7 @@ class ClientController:
             self.remove_card_from_deck()
         elif option == 3:
             self.view.display_user_deck(self.user.get_deck())
+
         else:
             self.view.display_message("Invalid option")
         self.edit_deck()

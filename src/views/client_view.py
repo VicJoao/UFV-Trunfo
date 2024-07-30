@@ -6,6 +6,8 @@ class ClientView:
         print("1 - Create new card")
         print("2 - Print all cards")
         print("3 - Edit Deck")
+        print("4 - Find a match")
+        print("5 - Create a match")
 
     def get_option(self):
         return int(input("Option: "))

@@ -1,9 +1,8 @@
-import socket
+import queue
 import threading
-import time
 import tkinter as tk
-from tkinter import messagebox
-
+import socket
+import time
 
 class Connection:
     def __init__(self, host='127.0.0.1', server_port=5002, broadcast_port=6002):
@@ -23,7 +22,24 @@ class Connection:
         self.text_area.pack()
         self.text_area.config(state=tk.DISABLED)
 
+        # Initialize message queue
+        self.message_queue = queue.Queue()
+
+        # Start the message processing thread
+        self.message_processing_thread = threading.Thread(target=self.process_messages, daemon=True)
+        self.message_processing_thread.start()
+
     def log_message(self, message):
+        self.message_queue.put(message)
+
+    def process_messages(self):
+        while True:
+            message = self.message_queue.get()
+            if message is None:
+                break
+            self.root.after(0, self._log_message, message)
+
+    def _log_message(self, message):
         self.text_area.config(state=tk.NORMAL)
         self.text_area.insert(tk.END, message + "\n")
         self.text_area.config(state=tk.DISABLED)
@@ -104,7 +120,6 @@ class Connection:
         self.update_connected_users()
 
         self.server_window.protocol("WM_DELETE_WINDOW", self.close_server_window)
-        self.server_window.mainloop()
 
     def close_server_window(self):
         self.server_window.destroy()
@@ -134,7 +149,8 @@ class Connection:
                             name = data.decode('utf-8').split(':', 1)[1]
                             if (addr, name) not in self.servers:
                                 self.servers.append((addr, name))
-                                self.refresh_server_list()
+                                self.log_message(f"Discovered server: {name} ({addr[0]}:{addr[1]})")
+                                refresh_server_list()
                     except Exception as e:
                         self.log_message(f"Error receiving data: {e}")
 
@@ -160,9 +176,10 @@ class Connection:
             connect_to_server(server_addr)
 
         def refresh_server_list():
-            self.server_listbox.delete(0, tk.END)
-            for addr, name in self.servers:
-                self.server_listbox.insert(tk.END, f"{name} ({addr[0]}:{addr[1]})")
+            if hasattr(self, 'server_listbox'):
+                self.server_listbox.delete(0, tk.END)
+                for addr, name in self.servers:
+                    self.server_listbox.insert(tk.END, f"{name} ({addr[0]}:{addr[1]})")
 
         self.server_frame = tk.Frame(self.root)
         self.server_frame.pack()
@@ -176,26 +193,24 @@ class Connection:
         discover_thread = threading.Thread(target=discover_servers, daemon=True)
         discover_thread.start()
 
+        # Start Tkinter main loop here
         self.root.mainloop()
 
     def create_client_interface(self, server_addr):
         self.root.withdraw()  # Hide the main window
         self.client_window = tk.Toplevel(self.root)
-        self.client_window.title(f"Connected to Server '{server_addr}'")
+        self.client_window.title(f"Connected to Server at {server_addr}")
 
         self.client_text_area = tk.Text(self.client_window, height=20, width=60)
         self.client_text_area.pack()
         self.client_text_area.config(state=tk.DISABLED)
 
-        # Show server address and user name
-        self.client_text_area.config(state=tk.NORMAL)
-        self.client_text_area.insert(tk.END, f"Connected to Server: {server_addr}\n")
-        self.client_text_area.insert(tk.END, f"User Name: {self.user_name}\n")
-        self.client_text_area.config(state=tk.DISABLED)
-
         self.client_window.protocol("WM_DELETE_WINDOW", self.close_client_window)
-        self.client_window.mainloop()
 
     def close_client_window(self):
         self.client_window.destroy()
         self.root.deiconify()  # Show the main window again
+
+    def start(self):
+        self.scan("default_user")
+

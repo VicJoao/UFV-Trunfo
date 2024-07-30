@@ -37,7 +37,7 @@ class ClientController:
         self.edit_deck_button = tk.Button(self.menu_frame, text="Edit Deck", command=self.edit_deck_dialog)
         self.edit_deck_button.pack()
 
-        self.find_match_button = tk.Button(self.menu_frame, text="Find a match", command=self.conection.scan)
+        self.find_match_button = tk.Button(self.menu_frame, text="Find a match", command=self.find_match)
         self.find_match_button.pack()
 
         self.create_match_button = tk.Button(self.menu_frame, text="Create a match", command=self.create_match_dialog)
@@ -58,6 +58,12 @@ class ClientController:
 
         self.exit_user_button = tk.Button(self.user_menu_frame, text="Exit", command=self.root.quit)
         self.exit_user_button.pack()
+
+    def find_match(self):
+        if self.user is None:
+            messagebox.showerror("Error", "No user selected.")
+            return
+        self.conection.scan(self.user.name)
 
     def load_user_menu(self):
         self.menu_frame.pack_forget()
@@ -152,7 +158,7 @@ class ClientController:
     def create_match_dialog(self):
         server_name = simpledialog.askstring("Create Match", "Enter server name:")
         if server_name:
-            self.conection.create_server(server_name)
+            self.conection.create_server(server_name, self.user.name)
             messagebox.showinfo("Info", "Server created successfully.")
 
     def get_card_attributes(self):
@@ -209,4 +215,3 @@ class ClientController:
                                  self.client_model.get_user_deck(self.user.id))
         except IndexError:
             messagebox.showerror("Error", "Invalid option")
-

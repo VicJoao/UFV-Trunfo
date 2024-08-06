@@ -83,7 +83,9 @@ class Connection:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
                 server_socket.bind((self.host, self.server_port))
                 server_socket.listen(5)
-                self.log_message(f"Server '{server_name}' listening on {self.host}:{self.server_port}")
+                self.log_message(f"Server '{self.current_server}' listening on {self.host}:{self.server_port}")
+                print(f"Server is running on {self.host}:{self.server_port}")
+
 
                 # Automatically connect the server creator
                 self.connections[(self.host, self.server_port)] = None
@@ -154,26 +156,15 @@ class Connection:
                     except Exception as e:
                         self.log_message(f"Error receiving data: {e}")
 
-        def connect_to_server(server_addr):
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
-                try:
-                    client_socket.connect(server_addr)
-                    self.current_client_socket = client_socket
-                    client_socket.sendall(f"USER:{self.user_name}".encode('utf-8'))
-                    data = client_socket.recv(1024)
-                    self.log_message(f"Received from server: {data.decode('utf-8')}")
-                    self.create_client_interface(server_addr)
-                except Exception as e:
-                    self.log_message(f"Connection error: {e}")
-
         def on_connect_button_click():
             selected_server_index = self.server_listbox.curselection()
             if not selected_server_index:
                 self.log_message("No server selected.")
                 return
             server_addr = self.servers[selected_server_index[0]][0]
+            print(server_addr)
             self.log_message(f"Connecting to server at {server_addr}...")
-            connect_to_server(server_addr)
+            self.connect_to_server(server_addr)
 
         def refresh_server_list():
             if hasattr(self, 'server_listbox'):
@@ -196,6 +187,24 @@ class Connection:
         # Start Tkinter main loop here
         self.root.mainloop()
 
+    def connect_to_server(self, server_addr):
+        print(f"Tentando conectar ao servidor em {server_addr}")
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+            try:
+                client_socket.connect(server_addr)
+                print("Conectado com sucesso")
+                self.current_client_socket = client_socket
+                client_socket.sendall(f"USER:{self.user_name}".encode('utf-8'))
+                print("Mensagem enviada")
+                data = client_socket.recv(1024)
+                print("Mensagem recebida")
+                self.log_message(f"Received from server: {data.decode('utf-8')}")
+                self.create_client_interface(server_addr)
+            except Exception as e:
+                self.log_message(f"Connection error: {e}")
+                print(f"Exception: {e}")
+
     def create_client_interface(self, server_addr):
         self.root.withdraw()  # Hide the main window
         self.client_window = tk.Toplevel(self.root)
@@ -214,3 +223,7 @@ class Connection:
     def start(self):
         self.scan("default_user")
 
+
+if __name__ == "__main__":
+    app = Connection()
+    app.start()

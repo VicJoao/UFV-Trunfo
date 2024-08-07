@@ -3,7 +3,7 @@ from tkinter import simpledialog, messagebox
 from models.deck import Deck
 from models.client_model import ClientModel
 from models.user import User
-from controllers.conection import Connection
+from controllers.client_connection import Connection
 
 
 class ClientController:
@@ -40,9 +40,6 @@ class ClientController:
         self.find_match_button = tk.Button(self.menu_frame, text="Find a match", command=self.find_match)
         self.find_match_button.pack()
 
-        self.create_match_button = tk.Button(self.menu_frame, text="Create a match", command=self.create_match_dialog)
-        self.create_match_button.pack()
-
         self.select_user_button = tk.Button(self.menu_frame, text="Select a User", command=self.load_user_menu)
         self.select_user_button.pack()
 
@@ -63,7 +60,10 @@ class ClientController:
         if self.user is None:
             messagebox.showerror("Error", "No user selected.")
             return
-        self.conection.scan(self.user.name)
+        server_address = simpledialog.askstring("Find Match", "Enter server2 address:")
+        if server_address:
+            self.conection.connect(server_address, self.user.name)
+            messagebox.showinfo("Info", "Connected to server2.")
 
     def load_user_menu(self):
         self.menu_frame.pack_forget()
@@ -155,12 +155,6 @@ class ClientController:
         self.remove_card_from_deck_op(card_option)
         messagebox.showinfo("Info", "Card removed from deck.")
 
-    def create_match_dialog(self):
-        server_name = simpledialog.askstring("Create Match", "Enter server name:")
-        if server_name:
-            self.conection.create_server(server_name, self.user.name)
-            messagebox.showinfo("Info", "Server created successfully.")
-
     def get_card_attributes(self):
         attributes = {
             "intelligence": simpledialog.askinteger("Card Attributes", "Enter the intelligence value:"),
@@ -215,3 +209,8 @@ class ClientController:
                                  self.client_model.get_user_deck(self.user.id))
         except IndexError:
             messagebox.showerror("Error", "Invalid option")
+
+
+if __name__ == "__main__":
+    import sys
+    ClientController(sys.argv[1])

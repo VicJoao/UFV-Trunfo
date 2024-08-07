@@ -24,5 +24,7 @@ RUN chmod -R 777 /app
 # Set the display environment variable
 ENV DISPLAY=:0
 
+EXPOSE 5002  # Certifique-se de expor a porta correta
+
 # Run the application
 CMD ["python3", "main.py"]

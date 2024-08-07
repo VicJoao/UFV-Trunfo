@@ -10,7 +10,7 @@ class ClientController:
     def __init__(self, client_db):
         self.client_db = client_db
         self.user = None
-        self.conection = Connection()
+        self.connection = Connection()
         self.client_model = ClientModel(self.client_db)
         self.root = tk.Tk()
         self.root.title("Client Manager")
@@ -22,9 +22,9 @@ class ClientController:
         self.menu_frame.pack()
 
         self.user_menu_frame = tk.Frame(self.root)
-        self.user_menu_frame.pack_forget()  # Initially hide user menu
+        self.user_menu_frame.pack_forget()  # Inicialmente oculta o menu de usuário
 
-        # Main Menu Widgets
+        # Widgets do Menu Principal
         self.label = tk.Label(self.menu_frame, text="Select an option:")
         self.label.pack()
 
@@ -37,7 +37,7 @@ class ClientController:
         self.edit_deck_button = tk.Button(self.menu_frame, text="Edit Deck", command=self.edit_deck_dialog)
         self.edit_deck_button.pack()
 
-        self.find_match_button = tk.Button(self.menu_frame, text="Find a match", command=self.find_match)
+        self.find_match_button = tk.Button(self.menu_frame, text="Find Servers", command=self.find_servers)
         self.find_match_button.pack()
 
         self.select_user_button = tk.Button(self.menu_frame, text="Select a User", command=self.load_user_menu)
@@ -46,7 +46,7 @@ class ClientController:
         self.exit_button = tk.Button(self.menu_frame, text="Exit", command=self.root.quit)
         self.exit_button.pack()
 
-        # User Menu Widgets
+        # Widgets do Menu de Usuário
         self.user_label = tk.Label(self.user_menu_frame, text="Select the username you want to load:")
         self.user_label.pack()
 
@@ -56,14 +56,22 @@ class ClientController:
         self.exit_user_button = tk.Button(self.user_menu_frame, text="Exit", command=self.root.quit)
         self.exit_user_button.pack()
 
-    def find_match(self):
-        if self.user is None:
-            messagebox.showerror("Error", "No user selected.")
-            return
-        server_address = simpledialog.askstring("Find Match", "Enter server2 address:")
-        if server_address:
-            self.conection.connect(server_address, self.user.name)
-            messagebox.showinfo("Info", "Connected to server2.")
+    def find_servers(self):
+        self.connection.find_servers()
+        self.root.after(1000, self.show_server_list)
+
+    def show_server_list(self):
+        for widget in self.menu_frame.winfo_children():
+            if isinstance(widget, tk.Button) and widget.cget("text") == "Connect to Server":
+                widget.destroy()
+
+        for server in self.connection.server_list:
+            tk.Button(self.menu_frame, text=f"Connect to {server}",
+                      command=lambda s=server: self.connect_to_server(s)).pack()
+
+    def connect_to_server(self, server_address):
+        # Lógica para conectar ao servidor
+        messagebox.showinfo("Info", f"Attempting to connect to {server_address}")
 
     def load_user_menu(self):
         self.menu_frame.pack_forget()
@@ -157,60 +165,47 @@ class ClientController:
 
     def get_card_attributes(self):
         attributes = {
-            "intelligence": simpledialog.askinteger("Card Attributes", "Enter the intelligence value:"),
-            "charisma": simpledialog.askinteger("Card Attributes", "Enter the charisma value:"),
-            "sport": simpledialog.askinteger("Card Attributes", "Enter the sport value:"),
-            "humor": simpledialog.askinteger("Card Attributes", "Enter the humor value:"),
-            "creativity": simpledialog.askinteger("Card Attributes", "Enter the creativity value:"),
-            "appearance": simpledialog.askinteger("Card Attributes", "Enter the appearance value:")
+            "Intelligence": simpledialog.askinteger("Card Attribute", "Enter Intelligence:"),
+            "Charisma": simpledialog.askinteger("Card Attribute", "Enter Charisma:"),
+            "Sport": simpledialog.askinteger("Card Attribute", "Enter Sport:"),
+            "Humor": simpledialog.askinteger("Card Attribute", "Enter Humor:"),
+            "Creativity": simpledialog.askinteger("Card Attribute", "Enter Creativity:"),
+            "Appearance": simpledialog.askinteger("Card Attribute", "Enter Appearance:")
         }
-        return (attributes["intelligence"], attributes["charisma"], attributes["sport"], attributes["humor"],
-                attributes["creativity"], attributes["appearance"])
+        return [attributes[key] for key in ["Intelligence", "Charisma", "Sport", "Humor", "Creativity", "Appearance"]]
+
+    def add_card_to_deck_op(self, card_option):
+        if card_option is not None:
+            self.client_model.add_card_to_deck(self.user.id, card_option)
+            self.user.initialize(self.client_model.get_user_cards(self.user.id),
+                                 self.client_model.get_user_deck(self.user.id))
+
+    def remove_card_from_deck_op(self, card_option):
+        if card_option is not None:
+            self.client_model.remove_card_from_deck(self.user.id, card_option)
+            self.user.initialize(self.client_model.get_user_cards(self.user.id),
+                                 self.client_model.get_user_deck(self.user.id))
 
     def display_user_deck(self):
         deck = self.user.get_deck()
-        if not isinstance(deck, Deck):
-            messagebox.showerror("Error", "Invalid deck object.")
-            return
-
-        cards = deck.get_cards()
-        if not cards:
-            messagebox.showinfo("Info", "Empty deck.")
+        if not deck:
+            messagebox.showinfo("Deck", "No cards in deck.")
             return
 
         deck_info = "\n".join(
+            f"Card ID: {card.id}\n"
             f"Name: {card.name}\n"
-            f"  Intelligence: {card.intelligence}\n"
-            f"  Charisma: {card.charisma}\n"
-            f"  Sport: {card.sport}\n"
-            f"  Humor: {card.humor}\n"
-            f"  Creativity: {card.creativity}\n"
-            f"  Appearance: {card.appearance}\n"
+            f"Attributes: {card.attributes}\n"
             f"{'-' * 20}"
-            for card in cards
+            for card in deck
         )
         messagebox.showinfo("Deck", deck_info)
 
-    def add_card_to_deck_op(self, card_option):
-        try:
-            card = self.user.get_cards()[card_option - 1]
-            self.client_model.add_card_to_deck(self.user.id, card.name)
-            self.user.initialize(self.client_model.get_user_cards(self.user.id),
-                                 self.client_model.get_user_deck(self.user.id))
-        except IndexError:
-            messagebox.showerror("Error", "Invalid option")
-
-    def remove_card_from_deck_op(self, card_option):
-        try:
-            cards = self.user.get_deck().get_cards()
-            card = cards[card_option - 1]
-            self.client_model.remove_card_from_deck(self.user.id, card.name)
-            self.user.initialize(self.client_model.get_user_cards(self.user.id),
-                                 self.client_model.get_user_deck(self.user.id))
-        except IndexError:
-            messagebox.showerror("Error", "Invalid option")
+    def run(self):
+        self.root.mainloop()
 
 
 if __name__ == "__main__":
-    import sys
-    ClientController(sys.argv[1])
+    client_db = "path_to_your_database_file"  # Atualize isso com o caminho correto do banco de dados
+    controller = ClientController(client_db)
+    controller.run()

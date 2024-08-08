@@ -7,7 +7,7 @@ class GameView:
         self.controller = controller
         self.running = False
         self.all_cards = [
-            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3)
+            # Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3)
         ]
         self.all_sprites = pygame.sprite.Group()
         for card in self.all_cards:

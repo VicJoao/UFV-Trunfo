@@ -3,7 +3,7 @@ from tkinter import simpledialog, messagebox
 from models.deck import Deck
 from models.client_model import ClientModel
 from models.user import User
-from controllers.conection import Connection
+# from controllers.conection import Connection
 from views.client_view import ClientView
 from views.game_view import GameView
 
@@ -11,7 +11,7 @@ class ClientController:
     def __init__(self, client_db,host=None, port=None, name=None):
         self.client_db = client_db
         self.user = None
-        self.conection = Connection()
+        # self.conection = Connection()
         self.client_model = ClientModel(self.client_db)
         self.root = tk.Tk()
         self.root.title("Client Manager")

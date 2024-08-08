@@ -1,7 +1,7 @@
 import pygame
 
 class Card(pygame.sprite.Sprite):
-    def __init__(self, name, intelligence, charisma, sport, humor, creativity, appearance):
+    def __init__(self, name, intelligence, charisma, sport, humor, creativity, appearance, image=None):
         pygame.sprite.Sprite.__init__(self)
         self.name = name
         self.intelligence = self._validate_stat(intelligence, "intelligence")
@@ -11,11 +11,9 @@ class Card(pygame.sprite.Sprite):
         self.creativity = self._validate_stat(creativity, "creativity")
         self.appearance = self._validate_stat(appearance, "appearance")
 
-        #Load img
-        self.image = pygame.image.load("assets/default_card.svg")
+        self.controller = CardControler()
+        self.image = image
 
-        self.rect = self.image.get_rect()
-        self.rect.center = (400, 300)
 
     def draw_card(self, screen):
         screen.blit(self.image, self.rect)

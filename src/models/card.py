@@ -52,17 +52,21 @@ class Card(pygame.sprite.Sprite):
         card_image = Image.fromarray(card_arr)
 
         card_image = self.write_text_on_image(card_image, self.get_name(), (130, 45), 15)
-        card_image = self.write_text_on_image(card_image, str(self.get_intelligence()), (208, 287), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.get_charisma()), (208, 311), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.get_sport()), (208, 335), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.get_sport()), (208, 359), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.get_creativity()), (208, 383), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.get_appearance()), (208, 407), 10, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.get_intelligence()), (208, 287), 15, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.get_charisma()), (208, 311), 15, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.get_sport()), (208, 334), 15, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.get_sport()), (208, 358), 15, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.get_creativity()), (208, 381), 15, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.get_appearance()), (208, 405), 15, color="W")
 
         card_arr = np.asarray(card_image)
-        # self.show_img_from_arr(card_arr)
 
-        return Image.fromarray(card_arr)
+        PADRAO = 150
+        width, height = Image.fromarray(card_arr).size  # Get dimensions
+
+        card_image = Image.fromarray(card_arr).resize((PADRAO, int(height * (PADRAO / width))))
+
+        return card_image
 
 
     def _validate_stat(self, value, stat_name):

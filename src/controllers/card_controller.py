@@ -7,8 +7,7 @@ from matplotlib import pyplot as plt
 class CardController:
     def __init__(self, client_db=None,host=None, port=None, name=None):
         self.client_db = client_db
-        # self.card = Card()
-        # self.image = pygame.image.load("assets/teste.png")
+        self.card = Card()
         self.atributes = {
             "name": "Igor",
             "intelligence": 0,
@@ -18,47 +17,6 @@ class CardController:
             "creativity": 0,
             "appearance": 0
         }
-
-    def gen_card(self, selfie):
-        card_image = Image.open("assets/teste.png")
-        name_tag = Image.open("assets/name_tag.png")
-
-        card_arr = np.asarray(card_image)
-        card_arr = card_arr.copy()
-        name_tag_arr = np.asarray(name_tag)
-        name_tag_arr = name_tag_arr.copy()
-
-        if selfie is not None:
-            # Load image
-            selfie_image = self.crop_picture(selfie)
-
-            # Add selfie to card at position (25,62.6)
-            selfie_arr = np.asarray(selfie_image)
-            selfie_arr = selfie_arr.copy()
-            posy = 62
-            posx = 25
-
-            card_arr[posy:posy + 200, posx:posx + 200, 0] = selfie_arr[:, :, 0]
-            card_arr[posy:posy + 200, posx:posx + 200, 1] = selfie_arr[:, :, 1]
-            card_arr[posy:posy + 200, posx:posx + 200, 2] = selfie_arr[:, :, 2]
-
-        card_arr = self.overlay_images(card_arr, name_tag_arr)
-        card_image = Image.fromarray(card_arr)
-
-        card_image = self.write_text_on_image(card_image, self.atributes["name"], (130, 45), 25)
-        card_image = self.write_text_on_image(card_image, str(self.atributes["intelligence"]), (208, 287), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.atributes["charisma"]), (208, 311), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.atributes["sport"]), (208, 335), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.atributes["humor"]), (208, 359), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.atributes["creativity"]), (208, 383), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.atributes["appearance"]), (208, 407), 10, color="W")
-
-
-
-        card_arr = np.asarray(card_image)
-        self.show_img_from_arr(card_arr)
-
-        #return Card(name, intelligence, charisma, sport, humor, creativity, appearance, card_image)
 
 
     def crop_picture(self, img):

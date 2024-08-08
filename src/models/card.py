@@ -1,7 +1,7 @@
 import pygame
-
+from PIL import Image
 class Card(pygame.sprite.Sprite):
-    def __init__(self, name, intelligence, charisma, sport, humor, creativity, appearance, image=None):
+    def __init__(self, name, intelligence, charisma, sport, humor, creativity, appearance, image=Image.open("assets/igor_nascimento_profile.jpeg"), controller=None):
         pygame.sprite.Sprite.__init__(self)
         self.name = name
         self.intelligence = self._validate_stat(intelligence, "intelligence")
@@ -11,27 +11,52 @@ class Card(pygame.sprite.Sprite):
         self.creativity = self._validate_stat(creativity, "creativity")
         self.appearance = self._validate_stat(appearance, "appearance")
 
-        self.controller = CardControler()
-        self.image = image
+        self.image = self.gen_card_img(image)
+        # self.image = pygame.transform.scale(self.image, (200, 300))
 
+        # Obter o retângulo da imagem
+        self.rect = self.image.get_rect()
+        self.rect.center = (50, 50)  # Posição inicial da carta
 
-    def draw_card(self, screen):
-        screen.blit(self.image, self.rect)
-        font_name = 'Arial' # @TODO: arrumar fonte!!!!
-        font = pygame.font.SysFont(font_name, 20)
-        font_bold = pygame.font.SysFont(font_name, 20, bold=True)
+    def gen_card_img(self, selfie):
+        card_image = Image.open("assets/teste.png")
+        name_tag = Image.open("assets/name_tag.png")
 
-        # Desenhar o texto na carta - @TODO: testar depois
-        # screen.blit(font_bold.render(self.name, True, (0, 0, 0)), (self.rect.x + 10, self.rect.y + 10))
-        # screen.blit(font.render(f"Inteligência: {self.intelligence}", True, (0, 0, 0)),
-        #             (self.rect.x + 10, self.rect.y + 50))
-        # screen.blit(font.render(f"Carisma: {self.charisma}", True, (0, 0, 0)), (self.rect.x + 10, self.rect.y + 70))
-        # screen.blit(font.render(f"Esportes: {self.sport}", True, (0, 0, 0)), (self.rect.x + 10, self.rect.y + 90))
-        # screen.blit(font.render(f"Humor: {self.humor}", True, (0, 0, 0)), (self.rect.x + 10, self.rect.y + 110))
-        # screen.blit(font.render(f"Criatividade: {self.creativity}", True, (0, 0, 0)),
-        #             (self.rect.x + 10, self.rect.y + 130))
-        # screen.blit(font.render(f"Aparência: {self.appearance}", True, (0, 0, 0)),
-        #             (self.rect.x + 10, self.rect.y + 150))
+        card_arr = np.asarray(card_image)
+        card_arr = card_arr.copy()
+        name_tag_arr = np.asarray(name_tag)
+        name_tag_arr = name_tag_arr.copy()
+
+        if selfie is not None:
+            # Load image
+            selfie_image = self.crop_picture(selfie)
+
+            # Add selfie to card at position (25,62.6)
+            selfie_arr = np.asarray(selfie_image)
+            selfie_arr = selfie_arr.copy()
+            posy = 62
+            posx = 25
+
+            card_arr[posy:posy + 200, posx:posx + 200, 0] = selfie_arr[:, :, 0]
+            card_arr[posy:posy + 200, posx:posx + 200, 1] = selfie_arr[:, :, 1]
+            card_arr[posy:posy + 200, posx:posx + 200, 2] = selfie_arr[:, :, 2]
+
+        card_arr = self.overlay_images(card_arr, name_tag_arr)
+        card_image = Image.fromarray(card_arr)
+
+        card_image = self.write_text_on_image(card_image, self.atributes["name"], (130, 45), 25)
+        card_image = self.write_text_on_image(card_image, str(self.atributes["intelligence"]), (208, 287), 10, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.atributes["charisma"]), (208, 311), 10, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.atributes["sport"]), (208, 335), 10, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.atributes["humor"]), (208, 359), 10, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.atributes["creativity"]), (208, 383), 10, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.atributes["appearance"]), (208, 407), 10, color="W")
+
+        card_arr = np.asarray(card_image)
+        self.show_img_from_arr(card_arr)
+
+        return Image.fromarray(card_arr)
+
 
     def _validate_stat(self, value, stat_name):
         if not isinstance(value, (int, float)):
@@ -85,3 +110,10 @@ class Card(pygame.sprite.Sprite):
 
     def set_appearance(self, appearance):
         self.appearance = self._validate_stat(appearance, "appearance")
+
+    def pil_to_pygame(self, image):
+        mode = image.mode
+        size = image.size
+        data = image.tobytes()
+
+        return pygame.image.fromstring(data, size, mode)

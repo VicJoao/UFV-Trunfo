@@ -1,11 +1,10 @@
 import os
-from models.client_model import ClientModel  # Supondo que a classe ClientModel esteja no arquivo client_model.py
+from models.client_model import ClientModel  # Certifique-se de que o caminho está correto para sua estrutura de diretórios
 
-# Configuração do ambiente de teste
-test_db = 'test_client_model.db'
-if os.path.exists(test_db):
-    os.remove(test_db)
-client_model = ClientModel(test_db)
+# Configuração do banco de dados existente
+existing_db = 'client.db'  # Substitua pelo caminho correto do seu banco de dados existente
+
+client_model = ClientModel(existing_db)
 
 # Testar criação de usuário
 user_id = client_model.create_user('Alice')
@@ -38,6 +37,3 @@ all_cards = client_model.get_all_cards()
 print("All Cards:")
 for card in all_cards:
     print(card)
-
-# Limpar o banco de dados de teste
-os.remove(test_db)

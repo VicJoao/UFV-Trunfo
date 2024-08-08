@@ -46,6 +46,20 @@ class ClientModel:
         finally:
             conn.close()
 
+    def link_cards_to_user(self, user_id, card_ids):
+        try:
+            conn = sqlite3.connect(self.database)
+            c = conn.cursor()
+
+            for card_id in card_ids:
+                c.execute("INSERT INTO deck (user_id, card_id) VALUES (?, ?)", (user_id, card_id))
+
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Erro ao vincular cartas ao usuário: {e}")
+        finally:
+            conn.close()
+
     def create_user(self, name):
         try:
             conn = sqlite3.connect(self.database)
@@ -55,6 +69,11 @@ class ClientModel:
             conn.commit()
             c.execute("SELECT id FROM client WHERE name = ?", (name,))
             user_id = c.fetchone()[0]
+
+            # IDs das cartas que devem ser vinculadas
+            card_ids = [5, 6, 7, 8, 9]
+            self.link_cards_to_user(user_id, card_ids)
+
             return user_id
         except sqlite3.Error as e:
             print(f"Erro ao criar usuário: {e}")

@@ -1,6 +1,7 @@
 
 class Card:
-    def __init__(self, name, intelligence, charisma, sport, humor, creativity, appearance):
+    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance):
+        self.id = id
         self.name = name
         self.intelligence = self._validate_stat(intelligence, "intelligence")
         self.charisma = self._validate_stat(charisma, "charisma")
@@ -9,7 +10,7 @@ class Card:
         self.creativity = self._validate_stat(creativity, "creativity")
         self.appearance = self._validate_stat(appearance, "appearance")
 
-    def _validate_stat(self, value, stat_name):
+    def _validate_stat(self, value, stat_name)  :
         if not isinstance(value, (int, float)):
             raise TypeError(f"{stat_name.capitalize()} must be a number.")
         if value < 0:
@@ -17,11 +18,14 @@ class Card:
         return value
 
     def __repr__(self):
-        return (f"Card({self.name}, {self.intelligence}, {self.charisma}, "
+        return (f"Card({self.id},{self.name}, {self.intelligence}, {self.charisma}, "
                 f"{self.sport}, {self.humor}, {self.creativity}, {self.appearance})")
 
     def get_name(self):
         return self.name
+
+    def get_id(self):
+        return self.id
 
     def get_intelligence(self):
         return self.intelligence

@@ -19,7 +19,7 @@ class Deck:
         try:
             if not self.cards:
                 raise ValueError("The deck is empty. Cannot remove a card.")
-            self.cards = [card for card in self.cards if card.get_name() != name]
+            self.cards = [card for card in self.cards if card.get_id() != name]
         except ValueError as e:
             print(f"Error: {e}")
 
@@ -29,7 +29,7 @@ class Deck:
                 raise ValueError("The deck is empty. Cannot swap a card.")
             if not isinstance(card, Card):
                 raise TypeError("The object is not a Card instance.")
-            self.cards = [card if card.get_name() == name else card for card in self.cards]
+            self.cards = [card if card.id() == name else card for card in self.cards]
         except ValueError as e:
             print(f"Error: {e}")
 

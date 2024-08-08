@@ -4,7 +4,7 @@ from models.deck import Deck
 from models.client_model import ClientModel
 from models.user import User
 from controllers.client_connection import ServerScanner
-import pickle
+
 
 class ClientController:
     def __init__(self, client_db):
@@ -15,7 +15,7 @@ class ClientController:
         self.root.title("Client Manager")
 
         # Inicializa o Scanner de Servidores
-        self.server_scanner = ServerScanner(self.root,)
+        self.server_scanner = ServerScanner(self.root, )
         self.server_scanner.frame.pack_forget()  # Oculta a tela de escaneamento por padrão
 
         self.create_widgets()
@@ -99,7 +99,7 @@ class ClientController:
 
     def create_user_card(self):
         attributes = self.get_card_attributes()
-        self.client_model.create_card(self.user.id, self.user.name, *attributes)
+        self.client_model.create_card(self.user.name, *attributes, self.user.id)
         self.user.initialize(self.client_model.get_user_cards(self.user.id),
                              self.client_model.get_user_deck(self.user.id))
         messagebox.showinfo("Info", "User card created successfully.")
@@ -110,7 +110,7 @@ class ClientController:
         name = simpledialog.askstring("Card Name", "Enter card name:")
         if name:
             attributes = self.get_card_attributes()
-            self.client_model.create_card(self.user.id, name, *attributes)
+            self.client_model.create_card(name, *attributes, self.user.id)
             self.user.initialize(self.client_model.get_user_cards(self.user.id),
                                  self.client_model.get_user_deck(self.user.id))
             messagebox.showinfo("Info", "Card created successfully.")
@@ -122,6 +122,7 @@ class ClientController:
             return
 
         card_info = "\n".join(
+            f"ID: {card.id}\n"
             f"Name: {card.name}\n"
             f"  Intelligence: {card.intelligence}\n"
             f"  Charisma: {card.charisma}\n"
@@ -136,7 +137,8 @@ class ClientController:
 
     def edit_deck_dialog(self):
         option = simpledialog.askinteger("Edit Deck",
-                                         "Enter option:\n0 - Return to menu\n1 - Add card to deck\n2 - Remove card from deck\n3 - Print deck")
+                                         "Enter option:\n0 - Return to menu\n1 - Add card to deck\n2 - Remove card "
+                                         "from deck\n3 - Print deck")
         if option == 0:
             self.user_menu_frame.pack_forget()
             self.menu_frame.pack()
@@ -187,20 +189,31 @@ class ClientController:
     def display_user_deck(self):
         deck = self.user.get_deck()
         if not deck:
-            messagebox.showinfo("Deck", "No cards in deck.")
+            messagebox.showinfo("Deck", "Deck not found.")
+            return
+
+        cards = deck.get_cards()
+        if not cards:
+            messagebox.showinfo("Deck", "Deck is empty.")
             return
 
         deck_info = "\n".join(
-            f"Card ID: {card.id}\n"
+            f"ID : {card.id}\n"
             f"Name: {card.name}\n"
-            f"Attributes: {card.attributes}\n"
+            f"  Intelligence: {card.intelligence}\n"
+            f"  Charisma: {card.charisma}\n"
+            f"  Sport: {card.sport}\n"
+            f"  Humor: {card.humor}\n"
+            f"  Creativity: {card.creativity}\n"
+            f"  Appearance: {card.appearance}\n"
             f"{'-' * 20}"
-            for card in deck
+            for card in cards
         )
         messagebox.showinfo("Deck", deck_info)
 
     def run(self):
         self.root.mainloop()
+
 
 if __name__ == "__main__":
     client_db = "path_to_your_database_file"  # Atualize isso com o caminho correto do banco de dados

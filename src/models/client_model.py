@@ -22,15 +22,13 @@ class ClientModel:
             # Criar tabela de cartas
             c.execute('''CREATE TABLE IF NOT EXISTS cards (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            user_id INTEGER,
                             name TEXT NOT NULL,
                             intelligence INTEGER,
                             charisma INTEGER,
                             sport INTEGER,
                             humor INTEGER,
                             creativity INTEGER,
-                            appearance INTEGER,
-                            FOREIGN KEY(user_id) REFERENCES client(id)
+                            appearance INTEGER
                         )''')
 
             # Criar tabela de deck (associando cartas aos usuários)
@@ -64,32 +62,23 @@ class ClientModel:
         finally:
             conn.close()
 
-    def create_card(self, user_id, name, intelligence, charisma, sport, humor, creativity, appearance):
+    def create_card(self, name, intelligence, charisma, sport, humor, creativity, appearance, user_id):
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
 
-            c.execute('''INSERT INTO cards (user_id, name, intelligence, charisma, sport, humor, creativity, appearance)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                        (user_id, name, intelligence, charisma, sport, humor, creativity, appearance))
-            conn.commit()
-        except sqlite3.Error as e:
-            print(f"Erro ao criar carta: {e}")
-        finally:
-            conn.close()
+            # Criar a carta
+            c.execute('''INSERT INTO cards (name, intelligence, charisma, sport, humor, creativity, appearance)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                      (name, intelligence, charisma, sport, humor, creativity, appearance))
+            card_id = c.lastrowid  # Obter o ID da última carta criada
 
-    def add_card_to_deck(self, user_id, card_name):
-        try:
-            conn = sqlite3.connect(self.database)
-            c = conn.cursor()
-
-            c.execute("SELECT id FROM cards WHERE user_id = ? AND name = ?", (user_id, card_name))
-            card_id = c.fetchone()[0]
+            # Adicionar a carta ao deck do usuário
             c.execute("INSERT INTO deck (user_id, card_id) VALUES (?, ?)", (user_id, card_id))
-            conn.commit()
 
+            conn.commit()
         except sqlite3.Error as e:
-            print(f"Erro ao adicionar carta ao deck: {e}")
+            print(f"Erro ao criar carta e adicionar ao deck: {e}")
         finally:
             conn.close()
 
@@ -98,8 +87,17 @@ class ClientModel:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
 
-            c.execute("SELECT id FROM cards WHERE user_id = ? AND name = ?", (user_id, card_name))
-            card_id = c.fetchone()[0]
+            # Obter o ID da carta com base no nome
+            c.execute("SELECT id FROM cards WHERE name = ?", (card_name,))
+            result = c.fetchone()
+
+            if result is None:
+                print(f"Carta com nome '{card_name}' não encontrada.")
+                return
+
+            card_id = result[0]
+
+            # Remover a carta do deck do usuário
             c.execute("DELETE FROM deck WHERE user_id = ? AND card_id = ?", (user_id, card_id))
             conn.commit()
 
@@ -149,7 +147,7 @@ class ClientModel:
                          FROM cards
                          JOIN deck ON cards.id = deck.card_id
                          WHERE deck.user_id = ?''', (user_id,))
-            deck_cards = [Card(card[2], card[3], card[4], card[5], card[6], card[7], card[8]) for card in c.fetchall()]
+            deck_cards = [Card(card[1], card[2], card[3], card[4], card[5], card[6], card[7]) for card in c.fetchall()]
             deck = Deck()
             deck.create(deck_cards)
             return deck
@@ -163,8 +161,14 @@ class ClientModel:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
 
-            c.execute('''SELECT * FROM cards WHERE user_id = ?''', (user_id,))
-            cards = [Card(card[2], card[3], card[4], card[5], card[6], card[7], card[8]) for card in c.fetchall()]
+            # Atualizar a consulta SQL conforme a estrutura da tabela cards
+            c.execute('''SELECT id, name, intelligence, charisma, sport, humor, creativity, appearance 
+                         FROM cards
+                         JOIN deck ON cards.id = deck.card_id
+                         WHERE deck.user_id = ?''', (user_id,))
+
+            # Supondo que a tabela cards não tem user_id e as colunas estão na ordem correta
+            cards = [Card(card[1], card[2], card[3], card[4], card[5], card[6], card[7]) for card in c.fetchall()]
             return cards
         except sqlite3.Error as e:
             print(f"Erro ao obter cartas do usuário: {e}")

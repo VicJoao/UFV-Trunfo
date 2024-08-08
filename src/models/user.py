@@ -28,6 +28,7 @@ class User:
                 raise ValueError("The user has no cards.")
             for card in self.cards:
                 print(card)
+
         except ValueError as e:
             print(f"Error: {e}")
 

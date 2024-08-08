@@ -1,6 +1,8 @@
+import pygame
 
-class Card:
+class Card(pygame.sprite.Sprite):
     def __init__(self, name, intelligence, charisma, sport, humor, creativity, appearance):
+        pygame.sprite.Sprite.__init__(self)
         self.name = name
         self.intelligence = self._validate_stat(intelligence, "intelligence")
         self.charisma = self._validate_stat(charisma, "charisma")
@@ -8,6 +10,30 @@ class Card:
         self.humor = self._validate_stat(humor, "humor")
         self.creativity = self._validate_stat(creativity, "creativity")
         self.appearance = self._validate_stat(appearance, "appearance")
+
+        #Load img
+        self.image = pygame.image.load("assets/default_card.svg")
+
+        self.rect = self.image.get_rect()
+        self.rect.center = (400, 300)
+
+    def draw_card(self, screen):
+        screen.blit(self.image, self.rect)
+        font_name = 'Arial' # @TODO: arrumar fonte!!!!
+        font = pygame.font.SysFont(font_name, 20)
+        font_bold = pygame.font.SysFont(font_name, 20, bold=True)
+
+        # Desenhar o texto na carta - @TODO: testar depois
+        # screen.blit(font_bold.render(self.name, True, (0, 0, 0)), (self.rect.x + 10, self.rect.y + 10))
+        # screen.blit(font.render(f"Inteligência: {self.intelligence}", True, (0, 0, 0)),
+        #             (self.rect.x + 10, self.rect.y + 50))
+        # screen.blit(font.render(f"Carisma: {self.charisma}", True, (0, 0, 0)), (self.rect.x + 10, self.rect.y + 70))
+        # screen.blit(font.render(f"Esportes: {self.sport}", True, (0, 0, 0)), (self.rect.x + 10, self.rect.y + 90))
+        # screen.blit(font.render(f"Humor: {self.humor}", True, (0, 0, 0)), (self.rect.x + 10, self.rect.y + 110))
+        # screen.blit(font.render(f"Criatividade: {self.creativity}", True, (0, 0, 0)),
+        #             (self.rect.x + 10, self.rect.y + 130))
+        # screen.blit(font.render(f"Aparência: {self.appearance}", True, (0, 0, 0)),
+        #             (self.rect.x + 10, self.rect.y + 150))
 
     def _validate_stat(self, value, stat_name):
         if not isinstance(value, (int, float)):

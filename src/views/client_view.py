@@ -1,92 +1,86 @@
-# client_view.py
-from models.deck import Deck
+import tkinter as tk
+from tkinter import messagebox
+
 class ClientView:
-    def display_menu(self):
-        print("0 - Return to user selection")
-        print("1 - Create new card")
-        print("2 - Print all cards")
-        print("3 - Edit Deck")
-        print("4 - Find a match")
-        print("5 - Create a match")
+    def __init__(self, controller):
+        self.controller = controller
+        self.root = tk.Tk()
+        self.root.title("Florestrunfo - Cliente")
+        self.create_menu()
+        self.create_login_screen()
 
-    def get_option(self):
-        return int(input("Option: "))
 
-    def display_edit_deck(self):
-        print("0 - Return to menu")
-        print("1 - Add card to deck")
-        print("2 - Remove card from deck")
-        print("3 - Print deck")
+    def create_menu(self):
+        self.menu = tk.Menu(self.root)
+        self.root.config(menu=self.menu)
 
-    def display_user_cards(self, cards):
-        if not cards:
-            print("No cards available.")
-            return
+        self.file_menu = tk.Menu(self.menu)
+        self.menu.add_cascade(label="File", menu=self.file_menu)
 
-        print("Cards:")
-        for i, card in enumerate(cards, start=1):
-            print("-" * 20)
-            print(f"{i}--{card.name}\n")
-            print(f"  Intelligence: {card.intelligence}")
-            print(f"  Charisma: {card.charisma}")
-            print(f"  Sport: {card.sport}")
-            print(f"  Humor: {card.humor}")
-            print(f"  Creativity: {card.creativity}")
-            print(f"  Appearance: {card.appearance}")
-            print("-" * 20)
+        menu_items = [
+            {"label": "Back", "command": self.user_selection_menu},
+            {"label": "Exit", "command": self.root.quit}
+        ]
 
-    def display_user_deck(self, deck):
-        if not isinstance(deck, Deck):
-            print("Invalid deck object.")
-            return
+        self.add_menu_items(self.file_menu, menu_items)
 
-        cards = deck.get_cards()
+    def add_menu_items(self, menu, items):
+        for item in items:
+            menu.add_command(label=item["label"], command=item["command"])
 
-        if not cards:
-            print("Empty deck.")
-            return
+    def user_selection_menu(self):
+        messagebox.showinfo("Menu", "Back selected")
 
-        for i, card in enumerate(cards, start=1):
-            print("-" * 20)
-            print(f"{i}--{card.name}\n")
-            print(f"  Intelligence: {card.intelligence}")
-            print(f"  Charisma: {card.charisma}")
-            print(f"  Sport: {card.sport}")
-            print(f"  Humor: {card.humor}")
-            print(f"  Creativity: {card.creativity}")
-            print(f"  Appearance: {card.appearance}")
-            print("-" * 20)
+    def create_login_screen(self):
+        self.label_user = tk.Label(self.root, text="User:")
+        self.label_user.pack()
+        self.entry_user = tk.Entry(self.root)
+        self.entry_user.pack()
 
-    def get_card_option(self):
-        return int(input("Option: "))
+        self.label_password = tk.Label(self.root, text="Password:")
+        self.label_password.pack()
+        self.entry_password = tk.Entry(self.root, show="*")
+        self.entry_password.pack()
 
-    def display_user_selection(self, users):
-        print("Select the username you want to load")
-        print("0 - Exit")
-        print("1 - Create new user")
-        for i, user in enumerate(users):
-            print(f"{i + 2} - {user[1]}")
+        self.btn_login = tk.Button(self.root, text="Login", command=self.login)
+        self.btn_login.pack()
 
-    def get_user_option(self):
-        try:
-            return int(input("Option: "))
-        except ValueError:
-            return -1
 
-    def get_username(self):
-        return input("Enter the username: ")
+    def create_home_screen(self):
+        self.label_menu = tk.Label(self.root, text="Menu")
+        self.label_menu.pack()
 
-    def get_card_attributes(self):
-        intelligence = int(input("Enter the intelligence value: "))
-        charisma = int(input("Enter the charisma value: "))
-        sport = int(input("Enter the sport value: "))
-        humor = int(input("Enter the humor value: "))
-        creativity = int(input("Enter the creativity value: "))
-        appearance = int(input("Enter the appearance value: "))
-        return intelligence, charisma, sport, humor, creativity, appearance
+        self.btn_create_new_card = tk.Button(self.root, text="Create New Card", command=self.controller.create_card)
+        self.btn_create_new_card.pack()
 
-    def display_message(self, message):
-        print(message)
+        self.btn_show_all_cards = tk.Button(self.root, text="Show All Cards", command=self.controller.show_cards)
+        self.btn_show_all_cards.pack()
 
-    def get_card_name(self):
-        return input("Enter the card name: ")
+        self.btn_edit_deck = tk.Button(self.root, text="Edit Deck", command=self.controller.edit_deck)
+        self.btn_edit_deck.pack()
+
+        self.btn_find_match = tk.Button(self.root, text="Find Match", command=self.controller.find_match)
+        self.btn_find_match.pack()
+
+        self.btn_create_match = tk.Button(self.root, text="Create Match", command=self.controller.create_match)
+        self.btn_create_match.pack()
+
+
+    def login(self):
+        usuario = self.entry_user.get()
+        senha = self.entry_password.get()
+        self.controller.login(usuario, senha)
+
+    def mostrar_mensagem(self, mensagem):
+        messagebox.showinfo("Informação", mensagem)
+
+    def run(self):
+        self.root.mainloop()
+
+    def show_home_screen(self):
+        try: self.root.destroy()
+        except: pass
+        self.root = tk.Tk()
+
+        self.create_home_screen()
+

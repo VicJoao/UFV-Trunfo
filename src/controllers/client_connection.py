@@ -3,37 +3,17 @@ from tkinter import messagebox
 import threading
 import socket
 import time
-import pickle
+from server2.message import Message
 
 # Defina as portas globalmente
+CLI_PORT = 4096
 DISCOVERY_PORT = 4242
-COMM_PORT = None  # Inicialmente não definido
+COMM_PORT = None
 
-class Message:
-    HANDSHAKE = 1
-    CONNECT = 2
-    PLAYERDATA = 3
-    DISCONNECT = 4
-
-    def __init__(self, message_type, data):
-        self.message_type = message_type
-        self.data = data
-
-    def to_bytes(self):
-        data_bytes = pickle.dumps(self.data)
-        message_length = len(data_bytes)
-        return self.message_type.to_bytes(1, byteorder='big') + message_length.to_bytes(4, byteorder='big') + data_bytes
-
-    @staticmethod
-    def from_bytes(message_bytes):
-        message_type = message_bytes[0]
-        message_length = int.from_bytes(message_bytes[1:5], byteorder='big')
-        data_bytes = message_bytes[5:5 + message_length]
-        data = pickle.loads(data_bytes)
-        return Message(message_type, data)
 
 class ServerScanner:
     def __init__(self, root):
+        self.user_list=[]
         self.root = root
         self.is_scanning = False
         self.servers = {}
@@ -79,23 +59,20 @@ class ServerScanner:
     def check_discovery_port(self, port):
         hosts = ['localhost']
         for host in hosts:
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
-                s.settimeout(1)
-                try:
-                    s.sendto(b"Discovery", (host, port))
-                    s.settimeout(2)
-                    try:
-                        response, _ = s.recvfrom(1024)
-                        response = response.decode('utf-8')
-                        if response.startswith("Server Name:"):
-                            name = response[len("Server Name:"):]
-                            if host not in self.servers:
-                                self.servers[host] = name
-                                self.update_server_list(name)
-                    except socket.timeout:
-                        print(f"Timeout ao esperar resposta do servidor em {host}:{port}")
-                except Exception as e:
-                    print(f"Erro ao verificar porta de descoberta em {host}:{port}: {e}")
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
+                    s.settimeout(5)
+                    s.sendto(Message(Message.HANDSHAKE, {}).to_bytes(), (host, port))
+                    data, addr = s.recvfrom(1024)
+                    message = Message.from_bytes(data)
+                    if message.message_type == Message.HANDSHAKE:
+                        server_name = message.data
+                        self.servers[host] = server_name
+                        self.update_server_list(server_name)
+                    else:
+                        print(f"Resposta inesperada do servidor {host}: {message.data}")
+            except Exception as e:
+                print(f"Erro ao escanear servidor {host}: {e}")
 
     def update_server_list(self, server_name):
         self.server_listbox.insert(tk.END, server_name)
@@ -112,31 +89,44 @@ class ServerScanner:
         self.connect_to_host(host)
 
     def connect_to_host(self, host):
-        global COMM_PORT
+        #conecta a porta Discovery enviando a mensagem de CONNECT recebe resposta com a porta de comunicação do tipo CONNECT
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((host, DISCOVERY_PORT))
-                handshake_message = Message(Message.HANDSHAKE, {})
-                s.sendall(handshake_message.to_bytes())
-                response = s.recv(1024).decode('utf-8')
-                if "Connected to port" in response:
-                    COMM_PORT = int(response.split()[-1])
-                    self.establish_connection(host)
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
+                s.settimeout(5)
+                s.sendto(Message(Message.CONNECT, {}).to_bytes(), (host, DISCOVERY_PORT))
+                data, addr = s.recvfrom(1024)
+                message = Message.from_bytes(data)
+                if message.message_type == Message.CONNECT:
+                    global COMM_PORT
+                    COMM_PORT = message.data
+                    print(f"Conectado ao servidor {host} na porta {COMM_PORT}")
+                    self.stop_scanning()
+                    self.send_player_data(host)
                 else:
-                    messagebox.showerror("Erro", "Resposta inesperada ao tentar conectar.")
+                    messagebox.showerror("Erro", f"Resposta inesperada do servidor {host}: {message.data}")
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao conectar ao servidor: {e}")
+            messagebox.showerror("Erro", f"Erro ao conectar ao servidor {host}: {e}")
 
-    def establish_connection(self, host):
+    def send_player_data(self, host):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((host, COMM_PORT))
-                handshake_message = Message(Message.HANDSHAKE, {})
-                s.sendall(handshake_message.to_bytes())
-                response = s.recv(1024).decode('utf-8')
-                messagebox.showinfo("Conectado", response)
+                s.sendall(Message(Message.PLAYER_DATA, {'player_name': self.nome_jogador, 'deck': self.deck}).to_bytes())
+                data = s.recv(1024)
+                message = Message.from_bytes(data)
+                if message.message_type == Message.PLAYER_DATA:
+                    print(f"Data recebida do servidor {host}: {message.data}")
+                    self.show_game()
+                else:
+                    messagebox.showerror("Erro", f"Resposta inesperada do servidor {host}: {message.data}")
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao estabelecer conexão com o servidor: {e}")
+            messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {host}: {e}")
+
+    def show_game(self):
+        self.frame.destroy()
+        print("Iniciando jogo...")
+        pass
+
 
 if __name__ == "__main__":
     root = tk.Tk()

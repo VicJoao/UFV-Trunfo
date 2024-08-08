@@ -1,9 +1,11 @@
 import pickle
 
 class Message:
-    HANDSHAKE = 11
-    CONNECT = 12
-    PLAYERDATA = 13
+    HANDSHAKE = 1
+    CONNECT = 2
+    PLAYER_DATA = 3
+    DISCONNECT = 4
+    TYPO_ERROR = 5
 
     def __init__(self, message_type, data):
         self.message_type = message_type

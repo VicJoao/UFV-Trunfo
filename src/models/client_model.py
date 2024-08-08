@@ -210,7 +210,7 @@ class ClientModel:
                          WHERE deck.user_id = ?''', (user_id,))
             deck_cards = [Card(card[0], card[1], card[2], card[3], card[4], card[5], card[6], card[7]) for card in
                           c.fetchall()]
-    
+
             deck = Deck()
             deck.create(deck_cards)
             return deck

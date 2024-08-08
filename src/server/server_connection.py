@@ -2,6 +2,9 @@ import socket
 import threading
 import pickle
 
+from models.deck import Deck
+
+
 class Message:
     HANDSHAKE = 1
     CONNECT = 2
@@ -83,8 +86,21 @@ class Server:
                     print(f"Conexão estabelecida com {addr}")
                     try:
                         message = Message.from_bytes(conn.recv(1024))
+
                         if message.message_type == Message.PLAYER_DATA:
-                            print(f"Dados do jogador {message.data['player_name']} recebidos")
+                            print("DADOS DO JOGADOR RECEBIDOS!!\n\n")
+                            print(f"JOGADOR 1:\n {message.data['player_name']}")
+                            deck = message.data['deck']  # Supondo que deck é parte dos dados
+                            if isinstance(deck, Deck):
+                                for card in deck.get_cards():
+                                    print(f"\n\nNome da carta: {card.name}")
+                                    print(f"Inteligência: {card.intelligence}")
+                                    print(f"Carisma: {card.charisma}")
+                                    print(f"Esporte: {card.sport}")
+                                    print(f"Humor: {card.humor}")
+                                    print(f"Criatividade: {card.creativity}")
+                                    print(f"Aparência: {card.appearance}")
+
                             response = Message(Message.PLAYER_DATA, "Player data received")
                             conn.sendall(response.to_bytes())
 

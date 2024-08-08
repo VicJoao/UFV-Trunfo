@@ -4,6 +4,7 @@ import threading
 import socket
 import pickle
 
+
 class Message:
     HANDSHAKE = 1
     CONNECT = 2
@@ -31,6 +32,7 @@ class Message:
 # Defina as portas globalmente
 DISCOVERY_PORT = 4242
 COMM_PORT = None
+
 
 class ServerScanner:
     def __init__(self, root):
@@ -165,8 +167,10 @@ class ServerScanner:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((host, COMM_PORT))
-                s.sendall(Message(Message.PLAYER_DATA, {'player_name': self.nome_jogador, 'deck': self.deck}).to_bytes())
+                s.sendall(
+                    Message(Message.PLAYER_DATA, {'player_name': self.nome_jogador, 'deck': self.deck}).to_bytes())
                 data = s.recv(1024)
+                print(self.deck)
                 message = Message.from_bytes(data)
                 if message.message_type == Message.PLAYER_DATA:
                     print(f"Data recebida do servidor {host}: {message.data}")

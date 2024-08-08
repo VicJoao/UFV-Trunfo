@@ -1,6 +1,6 @@
 import socket
 import threading
-from server2.message import Message
+from src.server2.message import Message
 
 # Defina as portas
 DISCOVERY_PORT = 4242

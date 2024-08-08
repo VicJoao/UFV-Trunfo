@@ -1,9 +1,9 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox
-from models.deck import Deck
-from models.client_model import ClientModel
-from models.user import User
-from controllers.client_connection import ServerScanner
+from src.models.deck import Deck
+from src.models.client_model import ClientModel
+from src.models.user import User
+from src.controllers.client_connection import ServerScanner
 import pickle
 
 class ClientController:

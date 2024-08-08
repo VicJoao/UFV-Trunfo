@@ -3,7 +3,7 @@ from tkinter import messagebox
 import threading
 import socket
 import time
-from server2.message import Message
+from src.server2.message import Message
 
 # Defina as portas globalmente
 CLI_PORT = 4096

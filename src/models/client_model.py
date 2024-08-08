@@ -1,7 +1,7 @@
 import sqlite3
-from models.card import Card
-from models.deck import Deck
-from models.user import User
+from ..models.card import Card
+from ..models.deck import Deck
+from ..models.user import User
 
 class ClientModel:
     def __init__(self, client_db):

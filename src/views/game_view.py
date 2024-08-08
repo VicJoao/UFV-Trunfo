@@ -30,6 +30,8 @@ class GameView:
     def run_game(self):
         pygame.init()
         screen = pygame.display.set_mode((1280, 720)) #,pygame.FULLSCREEN)
+        pygame.mouse.set_cursor(*pygame.cursors.arrow)
+        pygame.mouse.set_visible(True)
         pygame.display.set_caption("Florestrunfo - Jogo")
 
         background_color = (0, 77, 0)
@@ -43,8 +45,9 @@ class GameView:
             screen.fill(background_color)
             self.all_sprites.update()
             self.all_sprites.draw(screen)
-            pygame.mouse.set_cursor(*pygame.cursors.arrow)
+
             pygame.display.flip()
+
 
         pygame.quit()
 

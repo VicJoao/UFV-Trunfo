@@ -132,7 +132,7 @@ class Card(pygame.sprite.Sprite):
 
         width, height = img.size  # Get dimensions
 
-        img = img.resize((200, int(height * (200 / width))), Image.Resampling.BOX)
+        img = img.resize((200, int(height * (200 / width))))
 
         width, height = img.size  # Get new dimensions
 
@@ -213,7 +213,7 @@ class Card(pygame.sprite.Sprite):
         y = position[1] - text_height // 2
 
         # Escrever o texto na imagem
-        if color is "W":
+        if color == "W":
             draw.text((x, y), text, font=font, fill=(255, 255, 255, 255))  # A cor do texto é branca com opacidade total
         else:
             draw.text((x, y), text, font=font, fill=(0, 0, 0, 255))

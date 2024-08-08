@@ -6,6 +6,7 @@ class Message:
     PLAYER_DATA = 3
     DISCONNECT = 4
     TYPO_ERROR = 5
+    PLAYER_LIST = 6
 
     def __init__(self, message_type, data):
         self.message_type = message_type

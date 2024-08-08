@@ -2,32 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 import socket
-import pickle
-
-
-class Message:
-    HANDSHAKE = 1
-    CONNECT = 2
-    PLAYER_DATA = 3
-    DISCONNECT = 4
-    TYPO_ERROR = 5
-
-    def __init__(self, message_type, data):
-        self.message_type = message_type
-        self.data = data
-
-    def to_bytes(self):
-        data_bytes = pickle.dumps(self.data)
-        length = len(data_bytes)
-        return self.message_type.to_bytes(1, byteorder='big') + length.to_bytes(4, byteorder='big') + data_bytes
-
-    @classmethod
-    def from_bytes(cls, byte_data):
-        message_type = byte_data[0]
-        length = int.from_bytes(byte_data[1:5], byteorder='big')
-        data = pickle.loads(byte_data[5:])
-        return cls(message_type, data)
-
+from server2.message import Message
 
 # Defina as portas globalmente
 DISCOVERY_PORT = 4242
@@ -52,6 +27,17 @@ class ServerScanner:
         self.connect_button = tk.Button(self.frame, text="Conectar ao Servidor", command=self.connect_to_server)
         self.connect_button.pack(pady=5)
         self.connect_button.config(state=tk.DISABLED)
+
+        self.players_label = tk.Label(self.frame, text="Jogadores conectados:")
+        self.players_label.pack(pady=5)
+
+        self.players_listbox = tk.Listbox(self.frame, width=50, height=10)
+        self.players_listbox.pack()
+        self.players_listbox.config(state=tk.DISABLED)
+
+        self.disconnect_button = tk.Button(self.frame, text="Desconectar", command=self.disconnect_from_server)
+        self.disconnect_button.pack(pady=5)
+        self.disconnect_button.config(state=tk.DISABLED)
 
         self.nome_jogador = ""
         self.deck = None
@@ -110,7 +96,6 @@ class ServerScanner:
         for i in range(1, 255):
             local_ips.append(f"{base_ip}.{i}")
 
-        print(local_ips)
         return local_ips
 
     def check_discovery_port(self, host, port):
@@ -170,7 +155,6 @@ class ServerScanner:
                 s.sendall(
                     Message(Message.PLAYER_DATA, {'player_name': self.nome_jogador, 'deck': self.deck}).to_bytes())
                 data = s.recv(1024)
-                print(self.deck)
                 message = Message.from_bytes(data)
                 if message.message_type == Message.PLAYER_DATA:
                     print(f"Data recebida do servidor {host}: {message.data}")
@@ -181,9 +165,72 @@ class ServerScanner:
             messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {host}: {e}")
 
     def show_game(self):
-        self.frame.destroy()
-        print("Iniciando jogo...")
-        # Código para iniciar o jogo pode ser adicionado aqui
+        # Checa se a tela já foi destruída para evitar erros
+        if self.frame.winfo_exists():
+            self.frame.destroy()
+
+        self.players_frame = tk.Frame(self.root)
+        self.players_frame.pack(padx=10, pady=10)
+
+        self.players_listbox = tk.Listbox(self.players_frame, width=50, height=10)
+        self.players_listbox.pack()
+        self.players_listbox.config(state=tk.NORMAL)
+        self.players_listbox.insert(tk.END, self.nome_jogador)
+        self.players_listbox.config(state=tk.DISABLED)
+
+        self.players_label = tk.Label(self.players_frame, text="Jogadores conectados:")
+        self.players_label.pack(pady=5)
+
+        self.disconnect_button = tk.Button(self.players_frame, text="Desconectar", command=self.disconnect_from_server)
+        self.disconnect_button.pack(pady=5)
+
+        self.root.geometry("400x400")
+        self.root.title("Jogo")
+
+        # Cria um novo thread para escutar o servidor
+        self.listen_thread = threading.Thread(target=self.listen_to_server)
+        self.listen_thread.start()
+
+    def listen_to_server(self):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('0.0.0.0', self.comm_port))
+                s.listen(1)
+                conn, addr = s.accept()
+                with conn:
+                    while True:
+                        data = conn.recv(1024)
+                        if not data:
+                            break
+                        message = Message.from_bytes(data)
+                        if message.message_type == Message.START_GAME:
+                            self.start_game()
+                        elif message.message_type == Message.NEW_PLAYER:
+                            player_name = message.data
+                            self.players_listbox.config(state=tk.NORMAL)
+                            self.players_listbox.insert(tk.END, player_name)
+                            self.players_listbox.config(state=tk.DISABLED)
+                        elif message.message_type == Message.DISCONNECT:
+                            messagebox.showinfo("Desconectado", "Você foi desconectado do servidor.")
+                            self.root.destroy()
+                        else:
+                            print(f"Mensagem desconhecida recebida: {message.message_type}")
+        except Exception as e:
+            print(f"Erro ao escutar o servidor: {e}")
+
+    def disconnect_from_server(self):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect(('localhost', COMM_PORT))
+                s.sendall(Message(Message.DISCONNECT, {}).to_bytes())
+                print("Desconectado do servidor.")
+                self.root.destroy()
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao desconectar do servidor: {e}")
+
+    def start_game(self):
+        # Aqui você pode implementar a lógica para iniciar o jogo
+        print("O jogo começou!")
 
 
 if __name__ == "__main__":

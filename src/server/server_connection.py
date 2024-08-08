@@ -1,6 +1,30 @@
 import socket
 import threading
-from server2.message import Message
+import pickle
+
+class Message:
+    HANDSHAKE = 1
+    CONNECT = 2
+    PLAYER_DATA = 3
+    DISCONNECT = 4
+    TYPO_ERROR = 5
+
+    def __init__(self, message_type, data):
+        self.message_type = message_type
+        self.data = data
+
+    def to_bytes(self):
+        data_bytes = pickle.dumps(self.data)
+        length = len(data_bytes)
+        return self.message_type.to_bytes(1, byteorder='big') + length.to_bytes(4, byteorder='big') + data_bytes
+
+    @classmethod
+    def from_bytes(cls, byte_data):
+        message_type = byte_data[0]
+        length = int.from_bytes(byte_data[1:5], byteorder='big')
+        data = pickle.loads(byte_data[5:])
+        return cls(message_type, data)
+
 
 # Defina as portas
 DISCOVERY_PORT = 4242
@@ -15,7 +39,7 @@ class Server:
         self.lock = threading.Lock()
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.server_socket.bind(('0.0.0.0', DISCOVERY_PORT))
-        self.server_name = "Server001"
+        self.server_name = "Bucetona"
         self.palyers = []
         print(f"Servidor de descoberta iniciado na porta {DISCOVERY_PORT}")
 
@@ -50,7 +74,7 @@ class Server:
 
     def accept_connections(self, port):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('localhost', port))
+            s.bind(('0.0.0.0', port))
             s.listen(MAX_CLIENTS_PER_PORT)
             print(f"Servidor de comunicação iniciado na porta {port}")
             while True:

@@ -7,7 +7,7 @@ class GameView:
         self.controller = controller
         self.running = False
         self.all_cards = [
-            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3),
+            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3),
         ]
         self.all_sprites = pygame.sprite.Group()
         for card in self.all_cards:
@@ -15,7 +15,7 @@ class GameView:
 
     def create_card(self, name, intelligence, charisma, sport, humor, creativity, appearance):
         self.all_cards.append(
-            Card(name, intelligence, charisma, sport, humor, creativity, appearance)
+            Card(name, intelligence, charisma, sport, humor, creativity, appearance, )
         )
 
         self.all_sprites.add(self.all_cards[-1])
@@ -27,7 +27,7 @@ class GameView:
 
     def run_game(self):
         pygame.init()
-        screen = pygame.display.set_mode((800, 600))
+        screen = pygame.display.set_mode((1350, 1080),pygame.FULLSCREEN)
         pygame.display.set_caption("Florestrunfo - Jogo")
 
         background_color = (0, 77, 0)

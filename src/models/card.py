@@ -1,5 +1,8 @@
 import pygame
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
+import numpy as np
+from matplotlib import pyplot as plt
+
 class Card(pygame.sprite.Sprite):
     def __init__(self, name, intelligence, charisma, sport, humor, creativity, appearance, image=Image.open("assets/igor_nascimento_profile.jpeg"), controller=None):
         pygame.sprite.Sprite.__init__(self)
@@ -12,11 +15,12 @@ class Card(pygame.sprite.Sprite):
         self.appearance = self._validate_stat(appearance, "appearance")
 
         self.image = self.gen_card_img(image)
+        self.image = self.pil_to_pygame(self.image)
         # self.image = pygame.transform.scale(self.image, (200, 300))
 
         # Obter o retângulo da imagem
         self.rect = self.image.get_rect()
-        self.rect.center = (50, 50)  # Posição inicial da carta
+        self.rect.center = (400, 300)  # Posição inicial da carta
 
     def gen_card_img(self, selfie):
         card_image = Image.open("assets/teste.png")
@@ -44,16 +48,16 @@ class Card(pygame.sprite.Sprite):
         card_arr = self.overlay_images(card_arr, name_tag_arr)
         card_image = Image.fromarray(card_arr)
 
-        card_image = self.write_text_on_image(card_image, self.atributes["name"], (130, 45), 25)
-        card_image = self.write_text_on_image(card_image, str(self.atributes["intelligence"]), (208, 287), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.atributes["charisma"]), (208, 311), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.atributes["sport"]), (208, 335), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.atributes["humor"]), (208, 359), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.atributes["creativity"]), (208, 383), 10, color="W")
-        card_image = self.write_text_on_image(card_image, str(self.atributes["appearance"]), (208, 407), 10, color="W")
+        card_image = self.write_text_on_image(card_image, self.get_name(), (130, 45), 15)
+        card_image = self.write_text_on_image(card_image, str(self.get_intelligence()), (208, 287), 10, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.get_charisma()), (208, 311), 10, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.get_sport()), (208, 335), 10, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.get_sport()), (208, 359), 10, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.get_creativity()), (208, 383), 10, color="W")
+        card_image = self.write_text_on_image(card_image, str(self.get_appearance()), (208, 407), 10, color="W")
 
         card_arr = np.asarray(card_image)
-        self.show_img_from_arr(card_arr)
+        # self.show_img_from_arr(card_arr)
 
         return Image.fromarray(card_arr)
 
@@ -117,3 +121,97 @@ class Card(pygame.sprite.Sprite):
         data = image.tobytes()
 
         return pygame.image.fromstring(data, size, mode)
+
+    def crop_picture(self, img):
+        img.show()
+        new_width = 200
+        new_height = 200
+
+        width, height = img.size  # Get dimensions
+
+        img = img.resize((200, int(height * (200 / width))), Image.Resampling.BOX)
+
+        width, height = img.size  # Get new dimensions
+
+        left = (width - new_width) / 2
+        top = (height - new_height) / 2
+        right = (width + new_width) / 2
+        bottom = (height + new_height) / 2
+
+        # Crop the center of the image
+        img = img.crop((left, top, right, bottom))
+        return img
+
+    def show_img_from_arr(self, img_arr):
+        # Alternativamente, você pode usar matplotlib para exibir a imagem
+        plt.imshow(img_arr)
+        plt.axis('off')  # Oculta os eixos
+        plt.show()
+
+    def overlay_images(self, background_arr, overlay_arr, top=0, left=0):
+        """
+        Sobrepõe uma imagem sobre outra apenas onde os pixels da imagem de sobreposição não são 0.
+
+        Args:
+            background_arr (np.ndarray): Array da imagem de fundo.
+            overlay_arr (np.ndarray): Array da imagem de sobreposição.
+            top (int): Coordenada y para posicionar a sobreposição.
+            left (int): Coordenada x para posicionar a sobreposição.
+
+        Returns:
+            np.ndarray: Array da imagem resultante.
+        """
+        # Verificar as formas das imagens
+        overlay_height, overlay_width = overlay_arr.shape[:2]
+        background_height, background_width = background_arr.shape[:2]
+
+        if overlay_height + top > background_height or overlay_width + left > background_width:
+            raise ValueError("Overlay image exceeds background dimensions at the given position")
+
+        # Criar a máscara onde os pixels do overlay não são 0
+        mask = overlay_arr[:, :, 3] > 0  # Usar o canal alfa para a máscara
+
+        # Copiar os pixels da overlay para a imagem de fundo usando a máscara
+        for c in range(3):  # Para cada canal de cor (R, G, B)
+            background_arr[top:top + overlay_height, left:left + overlay_width, c][mask] = overlay_arr[:, :, c][
+                mask]
+
+        return background_arr
+
+    def write_text_on_image(self, image, text, position, font_size, color="B"):
+        """
+        Escreve texto em uma imagem usando uma fonte personalizada.
+
+        Args:
+            image (PIL.Image.Image): Imagem PIL onde o texto será escrito.
+            text (str): Texto a ser escrito na imagem.
+            position (tuple): Posição central (x, y) onde o texto será escrito.
+            font_path (str): Caminho para a fonte personalizada (.ttf).
+            font_size (int): Tamanho da fonte.
+
+        Returns:
+            PIL.Image.Image: Imagem resultante com o texto escrito.
+        """
+        # Criar um objeto de desenho
+        draw = ImageDraw.Draw(image)
+
+        # Carregar a fonte personalizada
+        font = ImageFont.truetype("assets/fonts/introrust-base.otf", font_size)
+
+        # Calcular a largura e a altura do texto
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+
+        # text_width = draw.textlength(text, font=font)
+
+        # Calcular a posição para centralizar o texto
+        x = position[0] - text_width // 2
+        y = position[1] - text_height // 2
+
+        # Escrever o texto na imagem
+        if color is "W":
+            draw.text((x, y), text, font=font, fill=(255, 255, 255, 255))  # A cor do texto é branca com opacidade total
+        else:
+            draw.text((x, y), text, font=font, fill=(0, 0, 0, 255))
+        return image

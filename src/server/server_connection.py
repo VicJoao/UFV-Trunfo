@@ -1,76 +1,100 @@
 import socket
 import threading
 import pickle
-from server2.message import Message
 
-SERVER_NAME = "Server 1"
+# Defina as portas
+DISCOVERY_PORT = 4242
+COMM_PORT_START = 4243
+COMM_PORT_END = 4245
+MAX_CLIENTS_PER_PORT = 1
 
-def receive_all(conn, length):
-    """Recebe todos os dados da conexão até que o comprimento especificado seja atingido."""
-    data = b''
-    while len(data) < length:
-        packet = conn.recv(length - len(data))
-        if not packet:
-            raise ConnectionError("Conexão fechada antes que todos os dados fossem recebidos")
-        data += packet
-    return data
+class Message:
+    HANDSHAKE = 1
+    CONNECT = 2
+    PLAYERDATA = 3
+    DISCONNECT = 4
 
+    def __init__(self, message_type, data):
+        self.message_type = message_type
+        self.data = data
 
-def handle_client(conn):
-    try:
-        # Envia uma mensagem de boas-vindas ao cliente
-        conn.sendall(f"Hello from {SERVER_NAME}".encode('utf-8'))
+    def to_bytes(self):
+        data_bytes = pickle.dumps(self.data)
+        message_length = len(data_bytes)
+        return self.message_type.to_bytes(1, byteorder='big') + message_length.to_bytes(4, byteorder='big') + data_bytes
 
-        # Recebe a mensagem completa (cabeçalho + dados)
-        message_header = receive_all(conn, 5)
-        message_length = int.from_bytes(message_header[1:5], byteorder='big')
-        message_data = receive_all(conn, message_length)
-        message = Message.from_bytes(message_header + message_data)
+    @staticmethod
+    def from_bytes(message_bytes):
+        message_type = message_bytes[0]
+        message_length = int.from_bytes(message_bytes[1:5], byteorder='big')
+        data_bytes = message_bytes[5:5 + message_length]
+        data = pickle.loads(data_bytes)
+        return Message(message_type, data)
 
-        if message.message_type == Message.HANDSHAKE:
-            conn.sendall("Handshake recebido.".encode('utf-8'))
-            print("Handshake recebido.")
-        elif message.message_type == Message.CONNECT:
-            conn.sendall("Conectado com sucesso.".encode('utf-8'))
-            print("Cliente conectado.")
-        elif message.message_type == Message.PLAYERDATA:
-            player = message.data
-            player_name = player.get("name")
-            player_ip = player.get("ip")
-            player_deck = player.get("deck")
+class Server:
+    def __init__(self):
+        self.port_map = {}  # Guarda a porta alocada para cada cliente
+        self.lock = threading.Lock()
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        self.server_socket.bind(('localhost', DISCOVERY_PORT))
+        print(f"Servidor de descoberta iniciado na porta {DISCOVERY_PORT}")
 
-            # Processa as informações recebidas
-            print(f"Recebido jogador: {player_name}")
-            print(f"Endereço IP do jogador: {player_ip}")
-            print(f"Deck do jogador: {player_deck}")
+    def start(self):
+        threading.Thread(target=self.handle_discovery).start()
+        threading.Thread(target=self.accept_connections).start()
 
-            # Envia uma confirmação ao cliente
-            conn.sendall(f"Jogador {player_name} recebido com sucesso!".encode('utf-8'))
-        else:
-            conn.sendall("Tipo de mensagem desconhecido.".encode('utf-8'))
-
-    except pickle.PickleError as e:
-        conn.sendall("Erro ao processar dados.".encode('utf-8'))
-        print(f"Erro ao desserializar dados: {e}")
-    except Exception as e:
-        conn.sendall("Erro inesperado no servidor.".encode('utf-8'))
-        print(f"Erro: {e}")
-    finally:
-        conn.close()
-
-
-
-def main():
-    print("Server is starting...")
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("0.0.0.0", 4242))
-        s.listen()
-        print("Server is listening for connections...")
+    def handle_discovery(self):
         while True:
-            conn, addr = s.accept()
-            thread = threading.Thread(target=handle_client, args=(conn,))
-            thread.start()
+            data, addr = self.server_socket.recvfrom(1024)
+            if data.decode('utf-8') == "Discovery":
+                response = "Server Name:MyServer"
+                self.server_socket.sendto(response.encode('utf-8'), addr)
 
+    def accept_connections(self):
+        for port in range(COMM_PORT_START, COMM_PORT_END + 1):
+            threading.Thread(target=self.listen_on_port, args=(port,)).start()
+
+    def listen_on_port(self, port):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+            server_socket.bind(('localhost', port))
+            server_socket.listen(MAX_CLIENTS_PER_PORT)
+            print(f"Escutando na porta {port}...")
+            while True:
+                conn, addr = server_socket.accept()
+                threading.Thread(target=self.handle_client, args=(conn, addr)).start()
+
+    def handle_client(self, conn, addr):
+        try:
+            while True:
+                data = conn.recv(1024)
+                if not data:
+                    break
+                message = Message.from_bytes(data)
+                if message.message_type == Message.CONNECT:
+                    port = self.allocate_port(addr)
+                    response = f"Connected to port {port}" if port else "No available ports."
+                    conn.sendall(response.encode('utf-8'))
+                elif message.message_type == Message.DISCONNECT:
+                    self.free_port(self.port_map.get(addr))
+                    conn.sendall(b"Disconnected.")
+                    break
+        finally:
+            conn.close()
+
+    def allocate_port(self, addr):
+        with self.lock:
+            for port in range(COMM_PORT_START, COMM_PORT_END + 1):
+                if port not in self.port_map.values():
+                    self.port_map[addr] = port
+                    return port
+            return None
+
+    def free_port(self, port):
+        with self.lock:
+            for key, value in list(self.port_map.items()):
+                if value == port:
+                    del self.port_map[key]
 
 if __name__ == "__main__":
-    main()
+    server = Server()
+    server.start()

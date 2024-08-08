@@ -3,17 +3,14 @@ from tkinter import messagebox
 import threading
 import socket
 import time
-from src.server2.message import Message
+from server2.message import Message
 
 # Defina as portas globalmente
-CLI_PORT = 4096
 DISCOVERY_PORT = 4242
 COMM_PORT = None
 
-
 class ServerScanner:
     def __init__(self, root):
-        self.user_list=[]
         self.root = root
         self.is_scanning = False
         self.servers = {}
@@ -26,12 +23,13 @@ class ServerScanner:
         self.stop_button = tk.Button(self.frame, text="Parar Escaneamento", command=self.stop_scanning)
         self.stop_button.pack(pady=5)
         self.stop_button.config(state=tk.DISABLED)
-        self.nome_jogador = ""
-        self.deck = None
 
         self.connect_button = tk.Button(self.frame, text="Conectar ao Servidor", command=self.connect_to_server)
         self.connect_button.pack(pady=5)
         self.connect_button.config(state=tk.DISABLED)
+
+        self.nome_jogador = ""
+        self.deck = None
 
     def set_user_info(self, player_name, deck):
         self.nome_jogador = player_name
@@ -52,26 +50,42 @@ class ServerScanner:
         self.stop_button.config(state=tk.DISABLED)
 
     def scan_for_servers(self):
-        while self.is_scanning:
-            self.check_discovery_port(DISCOVERY_PORT)
-            time.sleep(5)
+        ips = self.get_local_ips()
+        threads = []
 
-    def check_discovery_port(self, port):
-        hosts = ['localhost']
-        for host in hosts:
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
-                    s.settimeout(5)
-                    s.sendto(Message(Message.HANDSHAKE, {}).to_bytes(), (host, port))
-                    data, addr = s.recvfrom(1024)
-                    message = Message.from_bytes(data)
-                    if message.message_type == Message.HANDSHAKE:
-                        server_name = message.data
-                        self.servers[host] = server_name
-                        self.update_server_list(server_name)
-                    else:
-                        print(f"Resposta inesperada do servidor {host}: {message.data}")
-            except Exception as e:
+        for ip in ips:
+            if not self.is_scanning:
+                break
+            thread = threading.Thread(target=self.check_discovery_port, args=(ip, DISCOVERY_PORT))
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()  # Aguarda todas as threads terminarem
+
+    def get_local_ips(self):
+        local_ips = []
+        base_ip = '.'.join(socket.gethostbyname(socket.gethostname()).split('.')[:-1])
+        for i in range(1, 255):
+            local_ips.append(f"{base_ip}.{i}")
+        return local_ips
+
+    def check_discovery_port(self, host, port):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
+                s.settimeout(1)  # Reduza o tempo limite
+                s.sendto(Message(Message.HANDSHAKE, {}).to_bytes(), (host, port))
+                data, addr = s.recvfrom(1024)
+                message = Message.from_bytes(data)
+                if message.message_type == Message.HANDSHAKE:
+                    server_name = message.data
+                    self.servers[addr[0]] = server_name
+                    self.update_server_list(server_name)
+                else:
+                    print(f"Resposta inesperada do servidor {addr[0]}: {message.data}")
+        except Exception as e:
+            # Apenas exibe erro se o problema não for relacionado ao timeout
+            if 'timed out' not in str(e):
                 print(f"Erro ao escanear servidor {host}: {e}")
 
     def update_server_list(self, server_name):
@@ -89,10 +103,9 @@ class ServerScanner:
         self.connect_to_host(host)
 
     def connect_to_host(self, host):
-        #conecta a porta Discovery enviando a mensagem de CONNECT recebe resposta com a porta de comunicação do tipo CONNECT
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
-                s.settimeout(5)
+                s.settimeout(1)
                 s.sendto(Message(Message.CONNECT, {}).to_bytes(), (host, DISCOVERY_PORT))
                 data, addr = s.recvfrom(1024)
                 message = Message.from_bytes(data)
@@ -125,7 +138,7 @@ class ServerScanner:
     def show_game(self):
         self.frame.destroy()
         print("Iniciando jogo...")
-        pass
+        # Código para iniciar o jogo pode ser adicionado aqui
 
 
 if __name__ == "__main__":

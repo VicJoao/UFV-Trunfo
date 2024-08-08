@@ -1,4 +1,4 @@
-from src.models.card import Card
+from models.card import Card
 
 class User:
     def __init__(self):

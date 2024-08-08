@@ -1,6 +1,6 @@
 import socket
 import threading
-from src.server2.message import Message
+from server2.message import Message
 
 # Defina as portas
 DISCOVERY_PORT = 4242
@@ -14,7 +14,7 @@ class Server:
         self.port_map = {}  # Guarda a porta alocada para cada cliente
         self.lock = threading.Lock()
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.server_socket.bind(('localhost', DISCOVERY_PORT))
+        self.server_socket.bind(('0.0.0.0', DISCOVERY_PORT))
         self.server_name = "Server001"
         self.palyers = []
         print(f"Servidor de descoberta iniciado na porta {DISCOVERY_PORT}")

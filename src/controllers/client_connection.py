@@ -88,9 +88,26 @@ class ServerScanner:
 
     def get_local_ips(self):
         local_ips = []
-        base_ip = '.'.join(socket.gethostbyname(socket.gethostname()).split('.')[:-1])
+
+        # Obtém o IP local real da interface de rede
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0)
+        try:
+            # Conecta a um endereço remoto para descobrir o IP local
+            s.connect(('8.8.8.8', 1))
+            local_ip = s.getsockname()[0]
+        except Exception:
+            local_ip = '127.0.0.1'
+        finally:
+            s.close()
+
+        # Extrai a base do IP (três primeiros octetos)
+        base_ip = '.'.join(local_ip.split('.')[:-1])
+
+        # Gera os IPs na mesma sub-rede
         for i in range(1, 255):
             local_ips.append(f"{base_ip}.{i}")
+
         print(local_ips)
         return local_ips
 

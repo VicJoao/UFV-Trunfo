@@ -3,17 +3,21 @@ from tkinter import simpledialog, messagebox
 from models.deck import Deck
 from models.client_model import ClientModel
 from models.user import User
-from controllers.client_connection import Connection
-
+from controllers.client_connection import ServerScanner
+import pickle
 
 class ClientController:
     def __init__(self, client_db):
         self.client_db = client_db
         self.user = None
-        self.connection = Connection()
         self.client_model = ClientModel(self.client_db)
         self.root = tk.Tk()
         self.root.title("Client Manager")
+
+        # Inicializa o Scanner de Servidores
+        self.server_scanner = ServerScanner(self.root,)
+        self.server_scanner.frame.pack_forget()  # Oculta a tela de escaneamento por padrão
+
         self.create_widgets()
         self.load_user_menu()
 
@@ -37,7 +41,7 @@ class ClientController:
         self.edit_deck_button = tk.Button(self.menu_frame, text="Edit Deck", command=self.edit_deck_dialog)
         self.edit_deck_button.pack()
 
-        self.find_match_button = tk.Button(self.menu_frame, text="Find Servers", command=self.find_servers)
+        self.find_match_button = tk.Button(self.menu_frame, text="Find Servers", command=self.show_server_scanner)
         self.find_match_button.pack()
 
         self.select_user_button = tk.Button(self.menu_frame, text="Select a User", command=self.load_user_menu)
@@ -56,22 +60,15 @@ class ClientController:
         self.exit_user_button = tk.Button(self.user_menu_frame, text="Exit", command=self.root.quit)
         self.exit_user_button.pack()
 
-    def find_servers(self):
-        self.connection.find_servers()
-        self.root.after(1000, self.show_server_list)
+    def show_server_scanner(self):
+        self.menu_frame.pack_forget()
+        self.server_scanner.frame.pack()
+        self.server_scanner.start_scanning()  # Inicia o escaneamento de servidores
 
-    def show_server_list(self):
-        for widget in self.menu_frame.winfo_children():
-            if isinstance(widget, tk.Button) and widget.cget("text") == "Connect to Server":
-                widget.destroy()
-
-        for server in self.connection.server_list:
-            tk.Button(self.menu_frame, text=f"Connect to {server}",
-                      command=lambda s=server: self.connect_to_server(s)).pack()
-
-    def connect_to_server(self, server_address):
-        # Lógica para conectar ao servidor
-        messagebox.showinfo("Info", f"Attempting to connect to {server_address}")
+    def connect_to_server(self):
+        player_name = self.user.name if self.user else "Anonymous"
+        deck = self.user.get_deck() if self.user else Deck()
+        self.server_scanner.connect_to_server(player_name, deck)
 
     def load_user_menu(self):
         self.menu_frame.pack_forget()
@@ -88,6 +85,7 @@ class ClientController:
     def load_user(self, user):
         self.user = self.client_model.get_user_by_name(user[1])
         messagebox.showinfo("Info", f"User {self.user.get_name()} loaded")
+        self.server_scanner.set_user_info(self.user.get_name(), self.user.get_deck())
         self.user_menu_frame.pack_forget()
         self.menu_frame.pack()
 
@@ -203,7 +201,6 @@ class ClientController:
 
     def run(self):
         self.root.mainloop()
-
 
 if __name__ == "__main__":
     client_db = "path_to_your_database_file"  # Atualize isso com o caminho correto do banco de dados

@@ -5,6 +5,7 @@ class Player:
         self.hand = []
         self.score = 0
         self.ip = ""
+        self.name = ""
 
     def draw_cards(self):
         self.hand = random.sample(self.deck, 3)

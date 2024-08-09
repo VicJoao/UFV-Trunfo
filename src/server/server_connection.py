@@ -1,5 +1,6 @@
 import socket
 import threading
+from server2.game_data import GameData
 
 from models.deck import Deck
 from server2.message import Message
@@ -25,6 +26,7 @@ class Server:
         print(f"Servidor de descoberta iniciado na porta {DISCOVERY_PORT}")
         self.port = []
         self.players_name = []
+        self.game_data = GameData()
 
 
 
@@ -57,7 +59,7 @@ class Server:
                     self.server_socket.sendto(response.to_bytes(), addr)
                     print(f"Conexão com {addr} na porta {port}")
                     self.num_players += 1
-
+                    self.game_data.add_player(message.data['player_name'], message.data['deck'], addr)
                 else:
                     response = Message(Message.CONNECT, "No available ports")
                     self.server_socket.sendto(response.to_bytes(), addr)
@@ -176,8 +178,8 @@ class Server:
                 print(f"Erro ao enviar nova mensagem de jogador para {addr}: {e}")
 
     def start_game(self):
-        start_game_message = Message(Message.START_GAME, "Game is starting")
         for addr in self.port_map:
+            start_game_message = Message(Message.START_GAME, self.game_data.compact(addr))
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
                     udp_socket.sendto(start_game_message.to_bytes(), addr)

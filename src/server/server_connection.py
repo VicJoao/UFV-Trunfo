@@ -1,16 +1,14 @@
 import socket
 import threading
-import pickle
 
 from models.deck import Deck
 from server2.message import Message
 
-# Defina as portas
+# Define as portas
 MAX_CLIENTS = 3
 DISCOVERY_PORT = 4242
 COMM_PORT_START = 4243
 COMM_PORT_END = COMM_PORT_START + MAX_CLIENTS
-CLI_PORT = 4096
 MAX_CLIENTS_PER_PORT = 1
 
 
@@ -25,6 +23,7 @@ class Server:
         self.num_players = 0
         self.players = []  # Lista de jogadores
         print(f"Servidor de descoberta iniciado na porta {DISCOVERY_PORT}")
+        self.port = None
 
     def start(self):
         try:
@@ -39,12 +38,14 @@ class Server:
     def handle_discovery(self):
         while True:
             data, addr = self.server_socket.recvfrom(1024)
+
             message = Message.from_bytes(data)
             if message.message_type == Message.HANDSHAKE:
                 response = Message(Message.HANDSHAKE,
                                    self.server_name + "-" + str(self.num_players) + "/" + str(MAX_CLIENTS))
                 self.server_socket.sendto(response.to_bytes(), addr)
                 print(f"Handshake com {addr}")
+
             elif message.message_type == Message.CONNECT:
                 port = self.get_available_port()
                 if self.num_players < MAX_CLIENTS and port:
@@ -53,6 +54,7 @@ class Server:
                     self.server_socket.sendto(response.to_bytes(), addr)
                     print(f"Conexão com {addr} na porta {port}")
                     self.num_players += 1
+
                 else:
                     response = Message(Message.CONNECT, "No available ports")
                     self.server_socket.sendto(response.to_bytes(), addr)
@@ -76,25 +78,28 @@ class Server:
                         message = Message.from_bytes(conn.recv(1024))
 
                         if message.message_type == Message.PLAYER_DATA:
-                            print("DADOS DO JOGADOR RECEBIDOS!!\n\n")
-                            print(f"JOGADOR 1:\n {message.data['player_name']}")
-                            deck = message.data['deck']  # Supondo que deck é parte dos dados
-                            if isinstance(deck, Deck):
-                                for card in deck.get_cards():
-                                    print(f"\n\nNome da carta: {card.name}")
-                                    print(f"Inteligência: {card.intelligence}")
-                                    print(f"Carisma: {card.charisma}")
-                                    print(f"Esporte: {card.sport}")
-                                    print(f"Humor: {card.humor}")
-                                    print(f"Criatividade: {card.creativity}")
-                                    print(f"Aparência: {card.appearance}")
+                            print("DADOS DO JOGADOR RECEBIDOS, JOGADOR : ", {message.data['player_name']},
+                                  {message.data['deck']})
 
                             response = Message(Message.PLAYER_DATA, "Player data received")
                             conn.sendall(response.to_bytes())
 
-                            # Atualiza a lista de jogadores e envia para todos os clientes
-                            self.players.append(message.data['player_name'])
-                            self.send_new_player_to_all_clients(message.data['player_name'])
+                            # Envia falando que o jogador entrou no jogo!
+                            def send_message(host, server_client_port, message):
+                                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                                    s.sendto(message.to_bytes(), (host, server_client_port))
+
+                            while self.port is None:
+                                pass  # Espera até que a porta seja atualizada
+
+                            message = Message(Message.NEW_PLAYER, "Novo jogador entrou no jogo")
+                            send_message(addr[0], self.port, message)
+
+                        elif message.message_type == Message.CLIENT_PORT:
+
+                            # Atualiza a porta do cliente
+                            self.port = message.data['player_port']
+                            print("Porta de escuta do cliente:", self.port)
 
                         elif message.message_type == Message.DISCONNECT:
                             response = Message(Message.DISCONNECT, "Disconnect")
@@ -102,9 +107,9 @@ class Server:
                             print(f"Desconexão com {addr}")
                             self.disconnect(addr)
                             # Envia mensagem de desconexão para todos os clientes
-                            for addr in self.port_map:
+                            for client_addr in self.port_map:
                                 response = Message(Message.DISCONNECT, "A user has disconnected")
-                                self.server_socket.sendto(response.to_bytes(), addr)
+                                self.server_socket.sendto(response.to_bytes(), client_addr)
 
                         elif message.message_type == Message.START_GAME:
                             self.start_game()
@@ -118,6 +123,14 @@ class Server:
                             print(f"Erro de mensagem com {addr}, conexão recusada, com erro {response.data}")
                     except Exception as e:
                         print(f"Erro ao processar mensagem de {addr}: {e}")
+
+    def update_client_port(self, addr, port):
+        # Atualiza a porta do cliente na sua estrutura de dados
+        if addr not in self.client_ports:
+            self.client_ports[addr] = port
+        else:
+            self.client_ports[addr] = port
+        print(f"Porta do cliente {addr} atualizada para {port}")
 
     def get_available_port(self):
         with self.lock:

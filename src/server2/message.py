@@ -1,12 +1,16 @@
 import pickle
 
 class Message:
+    START_GAME = 15
+    LISTEN_PORT = 8
+    NEW_PLAYER = 7
     HANDSHAKE = 1
     CONNECT = 2
     PLAYER_DATA = 3
     DISCONNECT = 4
     TYPO_ERROR = 5
     PLAYER_LIST = 6
+    CLIENT_PORT = 10
 
     def __init__(self, message_type, data):
         self.message_type = message_type

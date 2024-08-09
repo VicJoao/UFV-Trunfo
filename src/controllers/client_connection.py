@@ -17,10 +17,13 @@ class ServerScanner:
         self.servers = {}
         self.frame = tk.Frame(root)
         self.frame.pack(padx=10, pady=10)
+
         self.server_listbox = tk.Listbox(self.frame, width=50, height=10)
         self.server_listbox.pack()
+
         self.start_button = tk.Button(self.frame, text="Iniciar Escaneamento", command=self.start_scanning)
         self.start_button.pack(pady=5)
+
         self.stop_button = tk.Button(self.frame, text="Parar Escaneamento", command=self.stop_scanning)
         self.stop_button.pack(pady=5)
         self.stop_button.config(state=tk.DISABLED)
@@ -45,6 +48,7 @@ class ServerScanner:
         self.listen_port = None
         self.host = None
         self.quantidade_jogadores = 0
+        self.players_list = []
 
     def set_user_info(self, player_name, deck):
         self.nome_jogador = player_name
@@ -80,12 +84,9 @@ class ServerScanner:
 
     def get_local_ips(self):
         local_ips = []
-
-        # Obtém o IP local real da interface de rede
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(0)
         try:
-            # Conecta a um endereço remoto para descobrir o IP local
             s.connect(('8.8.8.8', 1))
             local_ip = s.getsockname()[0]
         except Exception:
@@ -93,10 +94,8 @@ class ServerScanner:
         finally:
             s.close()
 
-        # Extrai a base do IP (três primeiros octetos)
         base_ip = '.'.join(local_ip.split('.')[:-1])
 
-        # Gera os IPs na mesma sub-rede
         for i in range(1, 255):
             local_ips.append(f"{base_ip}.{i}")
 
@@ -105,18 +104,17 @@ class ServerScanner:
     def check_discovery_port(self, host, port):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
-                s.settimeout(1)  # Reduza o tempo limite
+                s.settimeout(1)
                 s.sendto(Message(Message.HANDSHAKE, {}).to_bytes(), (host, port))
                 data, addr = s.recvfrom(1024)
                 message = Message.from_bytes(data)
                 if message.message_type == Message.HANDSHAKE:
                     server_name = message.data
                     self.servers[addr[0]] = server_name
-                    self.update_server_list(server_name)
+                    self.root.after(0, lambda: self.update_server_list(server_name))
                 else:
                     print(f"Resposta inesperada do servidor {addr[0]}: {message.data}")
         except Exception as e:
-            # Apenas exibe erro se o problema não for relacionado ao timeout
             if 'timed out' not in str(e):
                 print(f"Erro ao escanear servidor {host}: {e}")
 
@@ -135,29 +133,21 @@ class ServerScanner:
         self.host = host
         self.connect_to_host(host)
 
-    import socket
-    import threading
-
-    import socket
-
     def handle_server_messages(self):
         print("Iniciando a escuta de mensagens do servidor...")
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
             s.bind(('0.0.0.0', 0))  # Bind na porta de comunicação
 
-            # Obtém a porta na qual o cliente está escutando
             port = s.getsockname()[1]
             print(f"Minha porta é {port}")
 
-            # Enviar a porta para o servidor
             self.send_port_to_server(port, self.host)
 
             while True:
                 try:
-                    data, addr = s.recvfrom(1024)  # Recebe dados do servidor
-                    message = Message.from_bytes(data)  # Decodifica a mensagem recebida
+                    data, addr = s.recvfrom(1024)
+                    message = Message.from_bytes(data)
 
-                    # Processar a mensagem conforme o tipo
                     if message.message_type == Message.NEW_PLAYER:
                         self.process_new_player_message(message)
                     elif message.message_type == Message.START_GAME:
@@ -165,50 +155,36 @@ class ServerScanner:
                     else:
                         print("MENSAGEM NAO CONHECIDA")
 
-
                 except socket.error as e:
                     print(f"Erro ao receber mensagem: {e}")
-                    break  # Pode ser necessário quebrar o loop em caso de erro
+                    break
 
                 except Exception as e:
                     print(f"Erro inesperado: {e}")
-                    break  # Pode ser necessário quebrar o loop em caso de erro
+                    break
 
     def send_port_to_server(self, port, host):
         try:
-            # Cria uma instância da Message com o tipo CLIENT_PORT e os dados apropriados
             message = Message(Message.CLIENT_PORT, {"player_port": port, "nome_jogador": self.nome_jogador})
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((host, COMM_PORT))  # Conecte ao servidor via TCP
-                s.sendall(message.to_bytes())  # Envia a mensagem convertida para bytes
+                s.connect((host, COMM_PORT))
+                s.sendall(message.to_bytes())
         except Exception as e:
             print(f"Erro ao enviar a porta para o servidor: {e}")
 
     def process_new_player_message(self, message):
-        # Implementar o processamento de mensagens de tipo NEW_PLAYER
         print(f"Novo jogador entrou, bem vindo, {message.data['Nome']}")
         print(f"Jogadores conectados aguardando partida: {message.data['Jogadores']}")
+        self.players_list = message.data['Jogadores']
+        self.root.after(0, self.update_players_listbox)
 
-
-        # adicionar na lista de players conectados
-
-
-
-
-    def process_another_type_message(self, message):
-        # Implementar o processamento de mensagens de outro tipo
-        print(f"Outra mensagem: {message.data}")
-
-    def process_some_type_message(self, message):
-        # Implementar o processamento de mensagens de tipo SOME_TYPE
-        pass
-
-    def process_player_data(self, data):
-        # Implementar o processamento dos dados do jogador
-        print(f"Dados do jogador recebidos: {data}")
-
-
+    def update_players_listbox(self):
+        self.players_listbox.config(state=tk.NORMAL)
+        self.players_listbox.delete(0, tk.END)
+        for player in self.players_list:
+            self.players_listbox.insert(tk.END, player)
+        self.players_listbox.config(state=tk.DISABLED)
 
     def connect_to_host(self, host):
         try:
@@ -222,7 +198,6 @@ class ServerScanner:
                     COMM_PORT = message.data
                     print(f"Conectado ao servidor {host} na porta {COMM_PORT}")
 
-                    # Iniciar thread para escutar mensagens do servidor
                     threading.Thread(target=self.handle_server_messages, daemon=True).start()
 
                     self.stop_scanning()
@@ -251,7 +226,6 @@ class ServerScanner:
             messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {host}: {e}")
 
     def show_game(self):
-        # Checa se a tela já foi destruída para evitar erros
         if self.frame and self.frame.winfo_exists():
             self.frame.destroy()
 
@@ -261,7 +235,7 @@ class ServerScanner:
         self.players_listbox = tk.Listbox(self.frame, width=50, height=10)
         self.players_listbox.pack()
         self.players_listbox.config(state=tk.NORMAL)
-        self.players_listbox.insert(tk.END, "Você está conectado! ", self.nome_jogador)
+        self.players_listbox.insert(tk.END, f"Você está conectado! {self.nome_jogador}")
         self.players_listbox.config(state=tk.DISABLED)
 
         self.players_label = tk.Label(self.frame, text="Aguardando jogadores...")
@@ -272,10 +246,6 @@ class ServerScanner:
 
         self.root.geometry("400x400")
         self.root.title("Jogo")
-
-
-
-
 
     def disconnect_from_server(self):
         try:
@@ -288,7 +258,6 @@ class ServerScanner:
             messagebox.showerror("Erro", f"Erro ao desconectar do servidor: {e}")
 
     def start_game(self):
-        # Aqui você pode implementar a lógica para iniciar o jogo
         print("O jogo começou!")
 
 

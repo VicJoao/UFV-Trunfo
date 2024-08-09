@@ -187,7 +187,11 @@ class ServerScanner:
 
     def process_new_player_message(self, message):
         # Implementar o processamento de mensagens de tipo NEW_PLAYER
-        print(f"Novo jogador entrou, bem vindo, {message.data}")
+        print(f"Novo jogador entrou, bem vindo, {message.data['Nome']}")
+        print(f"Jogadores conectados aguardando partida: {message.data['Jogadores']}")
+
+
+        # adicionar na lista de players conectados
 
 
 

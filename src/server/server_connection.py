@@ -21,9 +21,11 @@ class Server:
         self.server_socket.bind(('0.0.0.0', DISCOVERY_PORT))
         self.server_name = "Server UFV"
         self.num_players = 0
-        self.players = []  # Lista de jogadores
+        self.players_data = []  # Lista de jogadores e seus dados
         print(f"Servidor de descoberta iniciado na porta {DISCOVERY_PORT}")
         self.port = []
+        self.players_name = []
+
 
 
     def start(self):
@@ -87,6 +89,9 @@ class Server:
                             response = Message(Message.PLAYER_DATA, "Player data received")
                             conn.sendall(response.to_bytes())
 
+                            # Salva o dado dos jogadores conectados
+                            self.players_data.append(message.data)
+
                             # Verifica se o número de jogadores é 3
                             if self.num_players == 3:
                                 # Envia a mensagem para todas as portas para iniciar o jogo
@@ -102,15 +107,20 @@ class Server:
                             self.port.append(message.data['player_port'])
                             nome = message.data['nome_jogador']
 
+                            self.players_name.append(nome)
+                            print(self.players_name)
+
                             # Função para enviar uma mensagem
                             def send_message(host, server_client_port, message):
                                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                                     s.sendto(message.to_bytes(), (host, server_client_port))
 
-                            # Envia a mensagem para todas as portas
+                            # Envia a mensagem para todas as portas que um novo jogador entrou
                             for port in self.port:
-                                message = Message(Message.NEW_PLAYER, nome)
+                                # Cria a mensagem com o nome do novo jogador e a lista de jogadores conectados
+                                message = Message(Message.NEW_PLAYER, {"Nome": nome, "Jogadores": self.players_name})
                                 send_message(addr[0], port, message)
+
 
                         elif message.message_type == Message.DISCONNECT:
                             response = Message(Message.DISCONNECT, "Disconnect")

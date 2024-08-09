@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 class Card(pygame.sprite.Sprite):
-    def __init__(self, name, intelligence, charisma, sport, humor, creativity, appearance, image, pos=(400, 300)):
+    def __init__(self, name, intelligence, charisma, sport, humor, creativity, appearance, image, pos=(120, 180)):
         pygame.sprite.Sprite.__init__(self)
         self.name = name
         self.intelligence = self._validate_stat(intelligence, "intelligence")
@@ -19,11 +19,12 @@ class Card(pygame.sprite.Sprite):
 
         # Obter o retângulo da imagem
         self.rect = self.image.get_rect()
-        self.rect.center = pos  # Posição inicial da carta
 
     def get_card_pos(self):
-        pass
+        return self.rect.center
 
+    def set_card_pos(self, pos):
+        self.rect.center = pos
     def gen_card_img(self, selfie):
         card_image = Image.open("src/assets/teste.png")
         name_tag = Image.open("src/assets/name_tag.png")
@@ -164,7 +165,7 @@ class Card(pygame.sprite.Sprite):
         plt.show()
 
 
-    def show_card(self):
+    def show(self):
         img_arr = np.asarray(self.pygame_to_pil(self.image))
         self.show_img_from_arr(img_arr)
 

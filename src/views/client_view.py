@@ -8,6 +8,7 @@ from views.textbox_view import TextBox
 from views.button_view import Button
 from models.card import Card
 import sys
+from PIL import Image
 class ClientView:
     def __init__(self):
         pygame.font.init()
@@ -46,8 +47,26 @@ class ClientView:
             "appearance": None,
             "image": None
         }
+        self.all_cards = [
+            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
+            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/selfie.jpg")),
+            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
+            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/selfie.jpg")),
+
+        ]
+
+        self.all_sprites = pygame.sprite.Group()
+        for card in self.all_cards:
+            self.all_sprites.add(card)
+
         self.buttons = []
         self.textboxes = []
+
+        self.is_showing = False
 
     def create_button(self, text, x, y, width, height, action):
         button = Button(text, x, y, width, height, self.normal_font, action)
@@ -110,10 +129,10 @@ class ClientView:
         screen_height = screen_info.current_h
 
         self.create_button("Create a new card", screen_width / 2, screen_height / 2 - 150, 300, 50,
-                           lambda: self.call_create_card_screen()) # @TODO: Implementar a chamada da tela de criação de cartas
+                           lambda: self.call_create_card_screen())
 
         self.create_button("Show all cards", screen_width/2, screen_height/2 - 90, 300, 50,
-                            lambda: self.display_user_cards()) # @TODO: Implementar a chamada da tela de exibição de cartas
+                            lambda: self.call_display_user_cards()) # @TODO: Implementar a chamada da tela de exibição de cartas
 
         self.create_button("Edit Deck", screen_width/2, screen_height/2 - 30, 300, 50,
                            lambda: self.call_edit_deck_screen())
@@ -135,8 +154,28 @@ class ClientView:
             for textbox in self.textboxes:
                 textbox.draw(self.screen)
 
+            if self.is_showing:
+                self.draw_cards(self.all_cards)
+
             pygame.display.flip()
             self.clock.tick(60)
+
+
+    def draw_cards(self, all_cards):
+        self.is_showing = True
+        all_sprites = pygame.sprite.Group() # @TODO: Implementar classe DECK <- justamente o que preciso aqui
+        for card in all_cards:
+            if card.rect.center[0] < 900:
+                card.set_card_pos((card.rect.center[0] + 180, card.rect.center[1]))
+            else:
+                card.set_card_pos((120, card.rect.center[1] + 180))
+
+            all_sprites.add(card)
+
+        all_sprites.draw(self.screen)
+
+
+
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -180,6 +219,14 @@ class ClientView:
 
     def display_user_cards(self):
         print("[!] Display User Cards: ClientView.display_user_cards()")
+        screen_info = pygame.display.Info()
+        screen_width = screen_info.current_w
+        screen_height = screen_info.current_h
+
+        self.create_button("Back", screen_width - 50, 50, 100, 50,
+                           lambda: self.call_client_main_screen())
+
+
 
 
     def edit_deck_dialog(self):
@@ -255,12 +302,17 @@ class ClientView:
 
         print("Submission complete! Please check:\n", self.submission)
 
-        card_img = Card(self.submission["name"], self.submission["intelligence"], self.submission["charisma"],
+        new_card = Card(self.submission["name"], self.submission["intelligence"], self.submission["charisma"],
                         self.submission["sport"], self.submission["humor"], self.submission["creativity"],
                         self.submission["appearance"], self.submission["image"])
 
-        # card_img.show_card()
+        new_card.show()
 
         # @TODO: Colocar no banco de dados
         self.change_state("CLIENT MAIN SCREEN")
+        self.load_state()
+
+    def call_display_user_cards(self):
+        print("Calling...")
+        self.change_state("DISPLAY USER CARDS")
         self.load_state()

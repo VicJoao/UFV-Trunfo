@@ -19,6 +19,7 @@ class Card(pygame.sprite.Sprite):
 
         # Obter o retângulo da imagem
         self.rect = self.image.get_rect()
+        self.pos = self.get_card_pos()
 
     def get_card_pos(self):
         return self.rect.center

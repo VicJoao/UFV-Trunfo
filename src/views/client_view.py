@@ -56,6 +56,22 @@ class ClientView:
                  image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
             Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
                  image=pygame.image.load("src/assets/selfie.jpg")),
+            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
+            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/selfie.jpg")),
+            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
+            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/selfie.jpg")),
+            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
+            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/selfie.jpg")),
+            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
+            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
+                 image=pygame.image.load("src/assets/selfie.jpg")),
 
         ]
 
@@ -66,7 +82,6 @@ class ClientView:
         self.buttons = []
         self.textboxes = []
 
-        self.is_showing = False
 
     def create_button(self, text, x, y, width, height, action):
         button = Button(text, x, y, width, height, self.normal_font, action)
@@ -154,7 +169,7 @@ class ClientView:
             for textbox in self.textboxes:
                 textbox.draw(self.screen)
 
-            if self.is_showing:
+            if self.current_state == "DISPLAY USER CARDS":
                 self.draw_cards(self.all_cards)
 
             pygame.display.flip()
@@ -162,13 +177,19 @@ class ClientView:
 
 
     def draw_cards(self, all_cards):
-        self.is_showing = True
         all_sprites = pygame.sprite.Group() # @TODO: Implementar classe DECK <- justamente o que preciso aqui
-        for card in all_cards:
-            if card.rect.center[0] < 900:
-                card.set_card_pos((card.rect.center[0] + 180, card.rect.center[1]))
+
+        x = 0
+        y = 200
+        for i in range (0,len(all_cards)):
+            card = all_cards[i]
+            if x < 1000:
+                x += 180
             else:
-                card.set_card_pos((120, card.rect.center[1] + 180))
+                x = 180
+                y += 300
+
+            card.set_card_pos((x, y))
 
             all_sprites.add(card)
 

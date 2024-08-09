@@ -1,6 +1,7 @@
 import pickle
 
 class Message:
+    ANOTHER_TYPE = 20
     START_GAME = 15
     LISTEN_PORT = 8
     NEW_PLAYER = 7

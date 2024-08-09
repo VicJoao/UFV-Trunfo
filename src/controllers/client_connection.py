@@ -10,7 +10,6 @@ COMM_PORT = None
 LISTEN_PORT = 4255
 
 
-
 class ServerScanner:
     def __init__(self, root):
         self.root = root
@@ -45,8 +44,7 @@ class ServerScanner:
         self.deck = None
         self.listen_port = None
         self.host = None
-
-
+        self.quantidade_jogadores = 0
 
     def set_user_info(self, player_name, deck):
         self.nome_jogador = player_name
@@ -151,24 +149,22 @@ class ServerScanner:
             port = s.getsockname()[1]
             print(f"Minha porta é {port}")
 
-
-
             # Enviar a porta para o servidor
             self.send_port_to_server(port, self.host)
 
             while True:
                 try:
                     data, addr = s.recvfrom(1024)  # Recebe dados do servidor
-
                     message = Message.from_bytes(data)  # Decodifica a mensagem recebida
 
                     # Processar a mensagem conforme o tipo
                     if message.message_type == Message.NEW_PLAYER:
                         self.process_new_player_message(message)
-                    elif message.message_type == Message.ANOTHER_TYPE:
-                        self.process_another_type_message(message)
+                    elif message.message_type == Message.START_GAME:
+                        self.start_game()
                     else:
-                        print(f"Mensagem desconhecida recebida: {message.message_type}")
+                        print("MENSAGEM NAO CONHECIDA")
+
 
                 except socket.error as e:
                     print(f"Erro ao receber mensagem: {e}")
@@ -181,7 +177,7 @@ class ServerScanner:
     def send_port_to_server(self, port, host):
         try:
             # Cria uma instância da Message com o tipo CLIENT_PORT e os dados apropriados
-            message = Message(Message.CLIENT_PORT, {"player_port": port})
+            message = Message(Message.CLIENT_PORT, {"player_port": port, "nome_jogador": self.nome_jogador})
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((host, COMM_PORT))  # Conecte ao servidor via TCP
@@ -191,25 +187,24 @@ class ServerScanner:
 
     def process_new_player_message(self, message):
         # Implementar o processamento de mensagens de tipo NEW_PLAYER
-        print(f"{message.data}")
+        print(f"Novo jogador entrou, bem vindo, {message.data}")
+
+
+
 
     def process_another_type_message(self, message):
         # Implementar o processamento de mensagens de outro tipo
         print(f"Outra mensagem: {message.data}")
 
     def process_some_type_message(self, message):
-        print("GAY")
         # Implementar o processamento de mensagens de tipo SOME_TYPE
-        pass
-
-    def process_another_type_message(self, message):
-        print("VIADO")
-        # Implementar o processamento de mensagens de tipo ANOTHER_TYPE
         pass
 
     def process_player_data(self, data):
         # Implementar o processamento dos dados do jogador
         print(f"Dados do jogador recebidos: {data}")
+
+
 
     def connect_to_host(self, host):
         try:
@@ -253,22 +248,22 @@ class ServerScanner:
 
     def show_game(self):
         # Checa se a tela já foi destruída para evitar erros
-        if self.frame.winfo_exists():
+        if self.frame and self.frame.winfo_exists():
             self.frame.destroy()
 
-        self.players_frame = tk.Frame(self.root)
-        self.players_frame.pack(padx=10, pady=10)
+        self.frame = tk.Frame(self.root)
+        self.frame.pack(padx=10, pady=10)
 
-        self.players_listbox = tk.Listbox(self.players_frame, width=50, height=10)
+        self.players_listbox = tk.Listbox(self.frame, width=50, height=10)
         self.players_listbox.pack()
         self.players_listbox.config(state=tk.NORMAL)
-        self.players_listbox.insert(tk.END, self.nome_jogador)
+        self.players_listbox.insert(tk.END, "Você está conectado! ", self.nome_jogador)
         self.players_listbox.config(state=tk.DISABLED)
 
-        self.players_label = tk.Label(self.players_frame, text="Jogadores conectados:")
+        self.players_label = tk.Label(self.frame, text="Aguardando jogadores...")
         self.players_label.pack(pady=5)
 
-        self.disconnect_button = tk.Button(self.players_frame, text="Desconectar", command=self.disconnect_from_server)
+        self.disconnect_button = tk.Button(self.frame, text="Desconectar", command=self.disconnect_from_server)
         self.disconnect_button.pack(pady=5)
 
         self.root.geometry("400x400")
@@ -276,56 +271,6 @@ class ServerScanner:
 
 
 
-    def listen_to_server(self):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-
-                s.bind(('0.0.0.0', 34500))
-                self.listen_port = s.getsockname()[1]
-                print(f"Cliente escutando na porta {self.listen_port}")
-
-
-
-                s.listen(1)  # Permitir uma conexão
-                print(f"Aguardando conexão na porta {self.listen_port}...")
-                conn, addr = s.accept()
-                print("Conexão aceita de", addr)
-
-
-
-                with conn:
-                    while True:
-                        data = conn.recv(1024)
-                        print("DATAAAA" ,data)
-                        if not data:
-                            break
-                        message = Message.from_bytes(data)
-                        if message.message_type == Message.START_GAME:
-                            self.start_game()
-                        elif message.message_type == Message.NEW_PLAYER:
-                            player_name = message.data
-                            print("NOMEEEE :", player_name)
-                            self.players_listbox.config(state=tk.NORMAL)
-                            self.players_listbox.insert(tk.END, player_name)
-                            self.players_listbox.config(state=tk.DISABLED)
-                        elif message.message_type == Message.DISCONNECT:
-                            messagebox.showinfo("Desconectado", "Você foi desconectado do servidor.")
-                            self.root.destroy()
-                        else:
-                            print(f"Mensagem desconhecida recebida: {message.message_type}")
-        except Exception as e:
-            print(f"Erro ao escutar o servidor: {e}")
-
-    def send_ip_client_to_server(self, server_ip):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.settimeout(1)
-                ip_address = socket.gethostbyname(socket.gethostname())
-                message = f"IP:{ip_address}".encode('utf-8')
-                s.sendto(message, (server_ip, DISCOVERY_PORT))
-                print(f"IP do cliente enviado para o servidor: {ip_address}")
-        except Exception as e:
-            print(f"Erro ao enviar IP para o servidor: {e}")
 
 
     def disconnect_from_server(self):

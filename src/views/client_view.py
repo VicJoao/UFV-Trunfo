@@ -6,6 +6,7 @@ import pygame
 import os
 from views.textbox_view import TextBox
 from views.button_view import Button
+from models.card import Card
 import sys
 class ClientView:
     def __init__(self):
@@ -242,11 +243,23 @@ class ClientView:
     def call_submit_card(self):
         print("Submitting...")
 
-        for i in range(len(self.textboxes)):
-            self.submission[list(self.submission.keys())[i]] = self.textboxes[i].get_text()
+        try:
+            for i in range(1, len(self.textboxes)):
+                self.submission[list(self.submission.keys())[i]] = int(self.textboxes[i].get_text())
+        except ValueError:
+            print("Invalid number. Please try again.")
+            self.load_state()
+            return
+        self.submission["name"] = self.textboxes[0].get_text()
         self.submission["image"] = self.img
 
         print("Submission complete! Please check:\n", self.submission)
+
+        card_img = Card(self.submission["name"], self.submission["intelligence"], self.submission["charisma"],
+                        self.submission["sport"], self.submission["humor"], self.submission["creativity"],
+                        self.submission["appearance"], self.submission["image"])
+
+        # card_img.show_card()
 
         # @TODO: Colocar no banco de dados
         self.change_state("CLIENT MAIN SCREEN")

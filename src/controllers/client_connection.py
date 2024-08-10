@@ -43,6 +43,7 @@ class ServerScanner:
         self.listen_port = None
         self.host = None
         self.players_list = []
+        self.porta_de_escuta = None
 
         # Tkinter
         self.frame = tk.Frame(root)
@@ -72,6 +73,13 @@ class ServerScanner:
         self.disconnect_button = tk.Button(self.frame, text="Desconectar", command=self.disconnect_from_server)
         self.disconnect_button.pack(pady=5)
         self.disconnect_button.config(state=tk.DISABLED)
+
+    def get_random_free_port(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('', 0))
+            self.porta_de_escuta = s.getsockname()[1]
+            print(self.porta_de_escuta)
+        return self.porta_de_escuta
 
     def show_game(self):
         if self.frame and self.frame.winfo_exists():
@@ -159,15 +167,12 @@ class ServerScanner:
         self.host = host
         self.connect_to_host(host)
 
-    def handle_server_messages(self):
+    def handle_server_messages(self, port):
         print("Iniciando a escuta de mensagens do servidor...")
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
-            s.bind(('0.0.0.0', 0))  # Bind na porta de comunicação
+            s.bind(('0.0.0.0', port))  # Bind na porta de comunicação
 
-            port = s.getsockname()[1]
             print(f"Minha porta é {port}")
-
-            self.send_port_to_server(port, self.host)
 
             while True:
                 try:
@@ -191,16 +196,6 @@ class ServerScanner:
                     print(f"Erro inesperado: {e}")
                     break
 
-    def send_port_to_server(self, port, host):
-        try:
-            message = Message(Message.CLIENT_PORT, {"player_port": port, "nome_jogador": self.nome_jogador})
-
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((host, COMM_PORT))
-                s.sendall(message.to_bytes())
-        except Exception as e:
-            print(f"Erro ao enviar a porta para o servidor: {e}")
-
     def process_new_player_message(self, message):
         print(f"Novo jogador entrou, bem vindo, {message.data['Nome']}")
         print(f"Jogadores conectados aguardando partida: {message.data['Jogadores']}")
@@ -215,7 +210,7 @@ class ServerScanner:
         self.players_listbox.config(state=tk.DISABLED)
 
     def connect_to_host(self, host):
-        self.start_countdown(5, host)
+        self.start_countdown(3, host)
 
     def start_countdown(self, count, host):
         if count > 0:
@@ -241,7 +236,10 @@ class ServerScanner:
                     COMM_PORT = message.data
                     print(f"Conectado ao servidor {host} na porta {COMM_PORT}")
 
-                    threading.Thread(target=self.handle_server_messages, daemon=True).start()
+                    self.get_random_free_port()
+
+                    threading.Thread(target=self.handle_server_messages, args=(self.porta_de_escuta,),
+                                     daemon=True).start()
 
                     self.stop_scanning()
                     self.send_player_data(host)
@@ -256,7 +254,8 @@ class ServerScanner:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((host, COMM_PORT))
                 s.sendall(
-                    Message(Message.PLAYER_DATA, {'player_name': self.nome_jogador, 'deck': self.deck}).to_bytes())
+                    Message(Message.PLAYER_DATA, {'player_name': self.nome_jogador, 'deck': self.deck,
+                                                  'player_port': self.porta_de_escuta}).to_bytes())
                 data = s.recv(1024)
                 message = Message.from_bytes(data)
                 if message.message_type == Message.PLAYER_DATA:
@@ -277,8 +276,6 @@ class ServerScanner:
                 self.root.destroy()
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao desconectar do servidor: {e}")
-
-
 
 
 if __name__ == "__main__":

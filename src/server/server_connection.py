@@ -93,35 +93,31 @@ class Server:
                     try:
                         message = Message.from_bytes(conn.recv(1024))
 
-                        # Recebe os dados do cliente, como nome e deck, salva, além disso, verifica se já pode começar
+                        # Recebe os dados do cliente, como nome e deck e porta, salva, além disso, verifica se já pode começar
                         # uma partida
                         if message.message_type == Message.PLAYER_DATA:
                             print("DADOS DO JOGADOR RECEBIDOS, JOGADOR : ", {message.data['player_name']},
                                   {message.data['deck']})
 
+                            print(message.data['player_name'])
                             response = Message(Message.PLAYER_DATA, "Player data received")
                             conn.sendall(response.to_bytes())
 
                             # Salva o dado dos jogadores conectados
                             self.players_data.append(message.data)
 
-                            self.game_data.add_player({message.data['player_name']}, {message.data['deck']})
 
-                            # Verifica se o número de jogadores é 3
-                            if len(self.players_data) == 3:
-                                self.start_game(self.porta_enviar_cliente)
-
-                        # Recebe a porta para poder enviar mensagens ao cliente
-                        elif message.message_type == Message.CLIENT_PORT:
-                            self.game_data.add_port(message.data['player_port'])
                             # Se o IP já existe no dicionário, adiciona a nova porta à lista
                             if client_ip in self.porta_enviar_cliente:
                                 self.porta_enviar_cliente[client_ip].append(message.data['player_port'])
                             else:
                                 self.porta_enviar_cliente[client_ip] = [message.data['player_port']]
 
-                            nome = message.data['nome_jogador']
+                            nome = message.data['player_name']
                             self.players_name.append(nome)
+
+                            # Recebe a porta para poder enviar mensagens ao cliente
+                            self.game_data.add_player(nome, message.data['deck'], message.data['player_port'])
 
                             # Envia a mensagem para todos os clientes que um novo jogador entrou
                             for client_ip, client_ports in self.porta_enviar_cliente.items():
@@ -129,6 +125,13 @@ class Server:
                                 message = Message(Message.NEW_PLAYER, {"Nome": nome, "Jogadores": self.players_name})
                                 for client_port in client_ports:
                                     send_message(client_ip, client_port, message)
+
+                            # Verifica se o número de jogadores é 3
+                            if len(self.players_data) == 3:
+                                print(self.porta_enviar_cliente)
+                                self.start_game(self.porta_enviar_cliente)
+
+
 
 
                         # Desconecta um cliente e envia para todos os outros
@@ -168,21 +171,9 @@ class Server:
                         del self.porta_enviar_cliente[client_ip]
                     print(f"Cliente {client_ip}:{player_port} desconectado")
 
-    # PRECISA ARRUMAR ISSO AQUI TA TUDO ERADO ESSA BOSTA!!
-    # TEM QUE ENVIAR PARA A porta de envio
-
-    # for addr in:
-    # start_game_message = Message(Message.START_GAME, self.game_data.compact(addr))
-    # try:
-    # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
-    # udp_socket.sendto(start_game_message.to_bytes(), addr)
-    # except Exception as e:
-    # print(f"Erro ao enviar mensagem de início de jogo para {addr}: {e}")
-
     def start_game(self, ips_e_portas):
 
         # Associaar aos jogadores
-        self.game_data.associate_ports_to_players()
 
         # Envia a mensagem de início do jogo para todos os IPs e portas
         for client_ip, client_ports in ips_e_portas.items():

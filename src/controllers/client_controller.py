@@ -1,14 +1,38 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox
-from models.deck import Deck
+
 from models.client_model import ClientModel
 from models.user import User
 from controllers.client_connection import ServerScanner
 
 
+def get_card_attributes():
+    attributes = {
+        "Intelligence": simpledialog.askinteger("Card Attribute", "Enter Intelligence:"),
+        "Charisma": simpledialog.askinteger("Card Attribute", "Enter Charisma:"),
+        "Sport": simpledialog.askinteger("Card Attribute", "Enter Sport:"),
+        "Humor": simpledialog.askinteger("Card Attribute", "Enter Humor:"),
+        "Creativity": simpledialog.askinteger("Card Attribute", "Enter Creativity:"),
+        "Appearance": simpledialog.askinteger("Card Attribute", "Enter Appearance:")
+    }
+    return [attributes[key] for key in ["Intelligence", "Charisma", "Sport", "Humor", "Creativity", "Appearance"]]
+
+
 class ClientController:
-    def __init__(self, client_db):
-        self.client_db = client_db
+    def __init__(self, banco_de_dados_do_cliente):
+        self.exit_user_button = None
+        self.create_user_button = None
+        self.user_label = None
+        self.exit_button = None
+        self.select_user_button = None
+        self.find_match_button = None
+        self.edit_deck_button = None
+        self.print_cards_button = None
+        self.create_card_button = None
+        self.label = None
+        self.user_menu_frame = None
+        self.menu_frame = None
+        self.client_db = banco_de_dados_do_cliente
         self.user = None
         self.client_model = ClientModel(self.client_db)
         self.root = tk.Tk()
@@ -65,11 +89,6 @@ class ClientController:
         self.server_scanner.frame.pack()
         self.server_scanner.start_scanning()  # Inicia o escaneamento de servidores
 
-    def connect_to_server(self):
-        player_name = self.user.name if self.user else "Anonymous"
-        deck = self.user.get_deck() if self.user else Deck()
-        self.server_scanner.connect_to_server(player_name, deck)
-
     def load_user_menu(self):
         self.menu_frame.pack_forget()
         self.user_menu_frame.pack()
@@ -98,7 +117,7 @@ class ClientController:
             self.create_user_card()
 
     def create_user_card(self):
-        attributes = self.get_card_attributes()
+        attributes = get_card_attributes()
         self.client_model.create_card(self.user.name, *attributes, self.user.id)
         self.user.initialize(self.client_model.get_user_cards(self.user.id),
                              self.client_model.get_user_deck(self.user.id))
@@ -109,7 +128,7 @@ class ClientController:
     def create_card_dialog(self):
         name = simpledialog.askstring("Card Name", "Enter card name:")
         if name:
-            attributes = self.get_card_attributes()
+            attributes = get_card_attributes()
             self.client_model.create_card(name, *attributes, self.user.id)
             self.user.initialize(self.client_model.get_user_cards(self.user.id),
                                  self.client_model.get_user_deck(self.user.id))
@@ -162,17 +181,6 @@ class ClientController:
         card_option = simpledialog.askinteger("Remove Card from Deck", "Enter card option:")
         self.remove_card_from_deck_op(card_option)
         messagebox.showinfo("Info", "Card removed from deck.")
-
-    def get_card_attributes(self):
-        attributes = {
-            "Intelligence": simpledialog.askinteger("Card Attribute", "Enter Intelligence:"),
-            "Charisma": simpledialog.askinteger("Card Attribute", "Enter Charisma:"),
-            "Sport": simpledialog.askinteger("Card Attribute", "Enter Sport:"),
-            "Humor": simpledialog.askinteger("Card Attribute", "Enter Humor:"),
-            "Creativity": simpledialog.askinteger("Card Attribute", "Enter Creativity:"),
-            "Appearance": simpledialog.askinteger("Card Attribute", "Enter Appearance:")
-        }
-        return [attributes[key] for key in ["Intelligence", "Charisma", "Sport", "Humor", "Creativity", "Appearance"]]
 
     def add_card_to_deck_op(self, card_option):
         if card_option is not None:

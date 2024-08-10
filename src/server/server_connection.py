@@ -161,16 +161,15 @@ class Server:
                 del self.porta_receber_cliente[addr]
                 print(f"Cliente {addr} desconectado da porta {port}")
 
-
-    # PRECISA ARRUMAR
-    def start_game(self):
-        for addr in self.porta_receber_cliente:
-            start_game_message = Message(Message.START_GAME, self.game_data.compact(addr))
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
-                    udp_socket.sendto(start_game_message.to_bytes(), addr)
-            except Exception as e:
-                print(f"Erro ao enviar mensagem de início de jogo para {addr}: {e}")
+    # PRECISA ARRUMAR ISSO AQUI TA TUDO ERADO ESSA BOSTA!!
+    # def start_game(self):
+    # for addr in:
+    # start_game_message = Message(Message.START_GAME, self.game_data.compact(addr))
+    # try:
+    # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
+    # udp_socket.sendto(start_game_message.to_bytes(), addr)
+    # except Exception as e:
+    # print(f"Erro ao enviar mensagem de início de jogo para {addr}: {e}")
 
 
 if __name__ == '__main__':

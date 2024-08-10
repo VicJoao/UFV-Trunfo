@@ -1,39 +1,28 @@
-from server.board import Board
-
+from server2.board import Board
+from server2.game_data import GameData
 
 class Game:
-    def __init__(self):
-        self.player1 = None
-        self.player2 = None
-        self.board = Board()
+    class Play:
+        def __init__(self, player_id: int, card: int):
+            self.player_id = player_id
+            self.card_id = card
+
+    def __init__(self, data: GameData, id: int):
+        self.my_id = id
+        self.players_hands = []
+        for player in data.players_data:
+            self.players_hands[player.id] = {player.hand, player.name}
+        self.board = Board(self.players_hands[self.my_id])
+        self.board.randomize()
         self.turn = 0
 
-    def add_player(self, player):
-        if self.player1 is None:
-            self.player1 = player
-        elif self.player2 is None:
-            self.player2 = player
-        else:
-            return 0  # Already two players
 
-    def start_game(self):
-        if not self.player1 or not self.player2:
-            return 0  # Need two players to start the game
-        self.player1.draw_cards()
-        self.player2.draw_cards()
-        self.turn = 1
-        return 1
-
-
-    def play_turn(self):
-        while True:
-            for player in [self.player1, self.player2]:
-                card = player.play()
-                if not card:
-                    return self.board.declare_winner()
-                self.board.add_card(card, player)
-                self.turn += 1
-
-            # Assuming you want to declare a round winner every two turns (one full round)
-            if self.turn % 2 == 0:
-                self.board.declare_round_winner()
+    def play_turn(self, plays: list):
+        for play in plays:
+            card_played = self.players_hands[play.player_id][play.card_id]
+            self.board.add_card(card_played, play.player_id)
+        self.board.declare_round_winner()
+        self.turn += 1
+        if self.turn == 3:
+            return self.board.declare_winner()
+        return -1

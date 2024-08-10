@@ -1,7 +1,8 @@
 import random
 class Board:
-    def __init__(self):
+    def __init__(self, my_cards):
         self.round_stat = ''
+        self.my_cards = my_cards
         self.cards = []
         self.pile = []
         self.points = []

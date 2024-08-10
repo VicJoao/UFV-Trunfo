@@ -4,6 +4,7 @@ from tkinter import messagebox
 import threading
 import socket
 from server2.message import Message
+from server2.game import Game
 
 # Defina as portas globalmente
 DISCOVERY_PORT = 4242
@@ -41,6 +42,7 @@ class ServerScanner:
         self.nome_jogador = ""
         self.deck = None
         self.listen_port = None
+        self.game = None
         self.host = None
         self.players_list = []
         self.porta_de_escuta = None
@@ -182,7 +184,16 @@ class ServerScanner:
                     if message.message_type == Message.NEW_PLAYER:
                         self.process_new_player_message(message)
                     elif message.message_type == Message.START_GAME:
-                        print(message.data)
+                        self.game = Game(message.data['game_data'], message.data['player_id'])
+                        self.reder_game_screen()
+                        print("Jogo iniciado!")
+                    elif message.message_type == Message.PLAY:
+                        print("Jogadas recebidas!")
+                        winner = self.game.play_turn(message.data['plays'])
+                        if winner != -1:
+                            print(f"Vencedor: {winner}!")
+                            #send WINNER message to server
+                            s.sendto(Message(Message.WINNER, {'winner': winner}).to_bytes(), (self.host, COMM_PORT))
                     elif message.message_type == Message.DISCONNECT:
                         print(message.data)
                     else:
@@ -277,6 +288,13 @@ class ServerScanner:
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao desconectar do servidor: {e}")
 
+    def reder_game_screen(self):
+        #render game screen with 3 cards and 3 buttons
+        pass
+
+    def render_round_winner(self):
+        #render round winner on screen for 3 seconds and all 3 played cards
+        pass
 
 if __name__ == "__main__":
     root = tk.Tk()

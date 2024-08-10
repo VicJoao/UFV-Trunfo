@@ -12,6 +12,8 @@ class Message:
     TYPO_ERROR = 5
     PLAYER_LIST = 6
     CLIENT_PORT = 10
+    PLAY = 11
+    WINNER = 12
 
     def __init__(self, message_type, data):
         self.message_type = message_type

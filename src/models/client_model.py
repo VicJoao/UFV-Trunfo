@@ -167,7 +167,7 @@ class ClientModel:
             c = conn.cursor()
 
             # Atualizar a coluna did_create_card para o valor especificado
-            c.execute("UPDATE users SET did_create_card = ? WHERE user_id = ?", (value, user_id))
+            c.execute("UPDATE client SET did_create_card = ? WHERE id = ?", (value, user_id))
 
             # Salvar (commit) as mudanças no banco de dados
             conn.commit()
@@ -179,8 +179,6 @@ class ClientModel:
             conn.close()
 
         return True
-
-
 
     def remove_card_from_deck(self, user_id, card_name):
         try:
@@ -228,13 +226,32 @@ class ClientModel:
             user_data = c.fetchone()
             user_id = user_data[0]
             user = User()
-            user.rename(user_data[0], user_data[1])
+            user.rename(user_data[0], user_data[1], user_data[2])
             user_cards = self.get_user_cards(user_id)
             user_deck = self.get_user_deck(user_id)
             user.initialize(user_cards, user_deck)
             return user
         except sqlite3.Error as e:
             print(f"Erro ao obter usuário por nome: {e}")
+        finally:
+            conn.close()
+
+    def get_user_by_id(self, id):
+        try:
+            conn = sqlite3.connect(self.database)
+            c = conn.cursor()
+
+            c.execute("SELECT * FROM client WHERE id = ?", (id,))
+            user_data = c.fetchone()
+            user_id = user_data[0]
+            user = User()
+            user.rename(user_data[0], user_data[1], user_data[2])
+            user_cards = self.get_user_cards(user_id)
+            user_deck = self.get_user_deck(user_id)
+            user.initialize(user_cards, user_deck)
+            return user
+        except sqlite3.Error as e:
+            print(f"Erro ao obter usuário por id: {e}")
         finally:
             conn.close()
 

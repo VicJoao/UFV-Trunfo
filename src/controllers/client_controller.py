@@ -27,11 +27,12 @@ class ClientController:
             self.view.main_menu_screen(self.model.get_all_users(), self.update_screen)
 
         elif self.get_current_state() == "CLIENT MAIN SCREEN":
+
             self.view.client_menu_screen(self.update_screen)
 
         elif self.get_current_state() == "CREATE CARD DIALOG":
             # print("[!] Create Card Dialog: ClientView.create_card_dialog()")
-            self.view.create_card_screen(self.user, self.update_screen)
+            self.view.create_card_screen(self.user, self.update_screen, self.set_did_create_card)
 
         elif self.get_current_state() == "DISPLAY USER CARDS":
             self.view.display_user_cards(self.user, self.update_screen)
@@ -56,7 +57,7 @@ class ClientController:
             self.view.remove_card_from_deck()
 
         elif self.get_current_state() == "CREATE USER":
-            self.view.create_new_user(self.update_screen)
+            self.view.create_new_user(self.update_screen, self.set_new_user)
 
 
         self.view.draw_widgets()
@@ -68,6 +69,14 @@ class ClientController:
         print("Calling...")
         self.view.change_state(state)
         self.load_state()
+
+    def set_did_create_card(self, user, value):
+        self.model.set_did_create_card(user.get_id(), value)
+
+    def set_new_user(self, username):
+        id = self.model.create_user(username)
+        self.user = self.model.get_user_by_id(id)
+
 
     def run(self):
         pygame.init()

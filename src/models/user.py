@@ -6,9 +6,11 @@ class User:
         self.cards = []
         self.deck = []
         self.id = 0
-    def rename(self, id, name):
+        self.did_create_card = False
+    def rename(self, id, name, did_create_card=False):
         self.name = name
         self.id = id
+        self.did_create_card = did_create_card
 
     def initialize(self, cards, deck):
         self.deck = deck
@@ -37,8 +39,14 @@ class User:
     def get_cards(self):
         return self.cards
 
+    def get_id(self):
+        return self.id
+
     def get_deck(self):
         return self.deck
+
+    def get_did_create_card(self):
+        return self.did_create_card
 
     def set_name(self, name):
         self.name = name
@@ -48,3 +56,6 @@ class User:
 
     def set_deck(self, deck):
         self.deck = deck
+
+    def set_did_create_card(self, did_create_card):
+        self.did_create_card = did_create_card

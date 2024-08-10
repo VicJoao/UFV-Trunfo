@@ -95,7 +95,6 @@ class ClientView:
             pygame.display.flip()
             self.clock.tick(60)
 
-
     def create_button(self, text, x, y, width, height, action=None, screen_name=None):
         button = Button(text, x, y, width, height, self.normal_font, action, screen_name)
         self.buttons.append(button)
@@ -123,11 +122,11 @@ class ClientView:
         self.main_menu_text.append(self.normal_font.render("Welcome to Florestrunfo!", True, (255, 255, 255)))
         self.main_menu_text.append(self.normal_font.render("Please select an user:", True, (255, 255, 255)))
 
-        for i, name, x in users: # @FIXME: Se forem muitos usuários, a tela vai ficar bugada
+        for i, user in enumerate(users): # @FIXME: Se forem muitos usuários, a tela vai ficar bugada
             width = screen_width / 2
-            height = screen_height / 2 - 300 + i * 60
+            height = screen_height / 2 - 300 + (i+1) * 60
 
-            self.create_button(name, width, height, 300, 50,
+            self.create_button(user[1], width, height, 300, 50,
                                update_screen, "CLIENT MAIN SCREEN")
 
         self.main_menu_text.append(self.normal_font.render("Or create a new one:", True, (255, 255, 255)))
@@ -161,32 +160,37 @@ class ClientView:
         self.create_button("Back", screen_width / 2, screen_height / 2 + 150, 100, 50,
                            lambda: update_screen("MAIN MENU"))
 
-    def create_card_screen(self,user, update_screen):
-        screen_info = pygame.display.Info()
-        screen_width = screen_info.current_w
-        screen_height = screen_info.current_h
+    def create_card_screen(self,user, update_screen, set_did_create_card):
+        if user.did_create_card:
+            print("Card already created.") #@TODO: Implementar notificação de erro
+            update_screen("CLIENT MAIN SCREEN")
+        else:
+            print("[!] Create Card Screen: ClientView.create_card_screen()")
+            screen_info = pygame.display.Info()
+            screen_width = screen_info.current_w
+            screen_height = screen_info.current_h
 
-        self.create_button("Upload selfie", screen_width / 2, screen_height / 2 - 210, 350, 50,
-                                 lambda : self.upload_img()) # @TODO: Implementar a chamada da tela de upload de imagem
-        self.create_textbox(screen_width / 2, screen_height / 2 - 150, 350, 50, self.small_font,
-                                placeholder='Name', limit=15)
-        self.create_textbox(screen_width / 2, screen_height / 2 - 90, 350, 50, self.small_font,
-                                placeholder='Intelligence', limit=2)
-        self.create_textbox(screen_width / 2, screen_height / 2 - 30, 350, 50, self.small_font,
-                                placeholder='Charisma', limit=2)
-        self.create_textbox(screen_width / 2, screen_height / 2 + 30, 350, 50, self.small_font,
-                                placeholder='Sport', limit=2)
-        self.create_textbox(screen_width / 2, screen_height / 2 + 90, 350, 50, self.small_font,
-                                placeholder='Humor', limit=2)
-        self.create_textbox(screen_width / 2, screen_height / 2 + 150, 350, 50, self.small_font,
-                                placeholder='Creativity', limit=2)
-        self.create_textbox(screen_width / 2, screen_height / 2 + 210, 350, 50, self.small_font,
-                                placeholder='Appearance', limit=2)
+            self.create_button("Upload selfie", screen_width / 2, screen_height / 2 - 210, 350, 50,
+                                     lambda : self.upload_img()) # @TODO: Implementar a chamada da tela de upload de imagem
+            self.create_textbox(screen_width / 2, screen_height / 2 - 150, 350, 50, self.small_font,
+                                    placeholder='Name', limit=15)
+            self.create_textbox(screen_width / 2, screen_height / 2 - 90, 350, 50, self.small_font,
+                                    placeholder='Intelligence', limit=2)
+            self.create_textbox(screen_width / 2, screen_height / 2 - 30, 350, 50, self.small_font,
+                                    placeholder='Charisma', limit=2)
+            self.create_textbox(screen_width / 2, screen_height / 2 + 30, 350, 50, self.small_font,
+                                    placeholder='Sport', limit=2)
+            self.create_textbox(screen_width / 2, screen_height / 2 + 90, 350, 50, self.small_font,
+                                    placeholder='Humor', limit=2)
+            self.create_textbox(screen_width / 2, screen_height / 2 + 150, 350, 50, self.small_font,
+                                    placeholder='Creativity', limit=2)
+            self.create_textbox(screen_width / 2, screen_height / 2 + 210, 350, 50, self.small_font,
+                                    placeholder='Appearance', limit=2)
 
-        self.create_button("Cancel", screen_width / 2 - 100, screen_height / 2 + 280, 150, 50,
-                           lambda : update_screen("CLIENT MAIN SCREEN"))
-        self.create_button("Submit", screen_width / 2 + 100, screen_height / 2 + 280, 150, 50,
-                           lambda: self.call_submit_card(user, update_screen))
+            self.create_button("Cancel", screen_width / 2 - 100, screen_height / 2 + 280, 150, 50,
+                               lambda : update_screen("CLIENT MAIN SCREEN"))
+            self.create_button("Submit", screen_width / 2 + 100, screen_height / 2 + 280, 150, 50,
+                               lambda: self.submit_new_card(user, update_screen, set_did_create_card))
 
     def display_user_cards(self, user, update_screen):
         print("[!] Display User Cards: ClientView.display_user_cards()")
@@ -238,10 +242,10 @@ class ClientView:
         self.create_button("Back", screen_width - 50, 50, 100, 50,
                            lambda: update_screen("CLIENT MAIN SCREEN"))
 
-    def remove_card_from_deck(self, ):
+    def remove_card_from_deck(self,user, update_screen):
         print("[!] Remove Card from Deck: ClientView.remove_card_from_deck()")
 
-    def create_new_user(self, update_screen):
+    def create_new_user(self, update_screen, set_new_user):
         print("[!] Create New User: ClientView.create_new_user()")
         screen_info = pygame.display.Info()
         screen_width = screen_info.current_w
@@ -250,7 +254,7 @@ class ClientView:
         self.create_textbox(screen_width / 2, screen_height / 2 - 50, 350, 50, self.small_font,
                             placeholder='First and last name', limit=15)
         self.create_button("Submit", screen_width / 2 + 100, screen_height / 2 + 50, 150, 50,
-                           lambda: self.submit_new_user(update_screen))
+                           lambda: self.submit_new_user(update_screen, set_new_user))
         self.create_button("Cancel", screen_width / 2 - 100, screen_height / 2 + 50, 150, 50,
                            lambda: update_screen("MAIN MENU"))
 
@@ -293,27 +297,25 @@ class ClientView:
             self.img_filename = filename  # Carregar a imagem
             self.txt = self.super_small_font.render(f"Selected: {filename}", True, (255, 255, 255))
 
-    def call_submit_card(self,user, update_screen):
+    def submit_new_card(self, user, update_screen, set_did_create_card):
         print("Submitting card...")
-        if not user.did_create_card:
-            try:
-                for i in range(1, len(self.textboxes)):
-                    self.submission[list(self.submission.keys())[i]] = int(self.textboxes[i].get_text())
-            except ValueError:
-                print("Invalid number. Please try again.") # @TODO: Implementar notificação de erro
-                update_screen("CREATE CARD DIALOG")
-                return
-            self.submission["name"] = self.textboxes[0].get_text()
-            self.submission["image"] = self.img_filename
+        try:
+            for i in range(1, len(self.textboxes)):
+                self.submission[list(self.submission.keys())[i]] = int(self.textboxes[i].get_text())
+        except ValueError:
+            print("Invalid number. Please try again.") # @TODO: Implementar notificação de erro
+            update_screen("CREATE CARD DIALOG")
+            return
+        self.submission["name"] = self.textboxes[0].get_text()
+        self.submission["image"] = self.img_filename
 
-            print("Submission complete! Please check:\n", self.submission) # @TODO: Implementar notificação de erro
-            user.did_create_card = True
-        else:
-            print("You have already created a card!") #@TODO: Implementar notificação de erro
-        # @TODO: Colocar no banco de dados
+        print("Submission complete! Please check:\n", self.submission) # @TODO: Implementar notificação de erro
+        user.did_create_card = True
+        set_did_create_card(user, True)
+
         update_screen("CLIENT MAIN SCREEN")
 
-    def submit_new_user(self, update_screen):
+    def submit_new_user(self, update_screen, set_new_user):
         print("Submitting user...")
         try:
             for i in range(1, len(self.textboxes)):
@@ -325,6 +327,8 @@ class ClientView:
         self.username = self.textboxes[0].get_text()
 
         print("Submission complete! Please check:\n", self.username)  # @TODO: Implementar notificação de erro
+
+        set_new_user(self.username)
 
         # @TODO: Colocar no banco de dados
 

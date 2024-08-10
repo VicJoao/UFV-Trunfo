@@ -50,7 +50,7 @@ class ClientController:
             self.view.add_card_to_deck()
 
         elif self.get_current_state() == "DISPLAY USER DECK":
-            self.view.display_user_deck()
+            self.view.display_user_deck(self.user, self.update_screen)
 
         elif self.get_current_state() == "REMOVE CARD FROM DECK":
             self.view.remove_card_from_deck()

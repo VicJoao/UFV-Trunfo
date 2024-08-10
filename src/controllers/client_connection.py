@@ -1,3 +1,4 @@
+import time
 import tkinter as tk
 from tkinter import messagebox
 import threading
@@ -176,7 +177,7 @@ class ServerScanner:
                     if message.message_type == Message.NEW_PLAYER:
                         self.process_new_player_message(message)
                     elif message.message_type == Message.START_GAME:
-                        self.start_game()
+                        print(message.data)
                     elif message.message_type == Message.DISCONNECT:
                         print(message.data)
                     else:
@@ -214,6 +215,21 @@ class ServerScanner:
         self.players_listbox.config(state=tk.DISABLED)
 
     def connect_to_host(self, host):
+        self.start_countdown(5, host)
+
+    def start_countdown(self, count, host):
+        if count > 0:
+            self.update_status(f"Conectando servidor, aguarde {count} segundos...")
+            self.root.after(1000, self.start_countdown, count - 1, host)
+        else:
+            self.update_status("Conexão estabelecida!")
+            self.finalize_connection(host)
+
+    def update_status(self, message):
+        self.server_listbox.delete(0, tk.END)
+        self.server_listbox.insert(tk.END, message)
+
+    def finalize_connection(self, host):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
                 s.settimeout(1)
@@ -262,8 +278,7 @@ class ServerScanner:
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao desconectar do servidor: {e}")
 
-    def start_game(self):
-        print("O jogo começou!")
+
 
 
 if __name__ == "__main__":

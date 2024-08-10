@@ -39,6 +39,7 @@ class ClientController:
         self.user = None
         self.client_model = ClientModel(self.client_db)
         self.root = tk.Tk()
+
         self.root.title("Client Manager")
 
         # Inicializa o Scanner de Servidores

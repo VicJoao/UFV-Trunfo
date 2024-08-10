@@ -1,7 +1,6 @@
 import socket
 import threading
 from server2.game_data import GameData
-
 from server2.message import Message
 
 # Define as portas e variáveis globais
@@ -12,18 +11,24 @@ COMM_PORT_END = COMM_PORT_START + MAX_CLIENTS
 MAX_CLIENTS_PER_PORT = 1
 
 
+def send_message(ip, server_client_port, mensagem_a_ser_enviada):
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as enviar:
+        enviar.sendto(mensagem_a_ser_enviada.to_bytes(), (ip, server_client_port))
+
+
 class Server:
     def __init__(self):
         self.porta_receber_cliente = {}  # Guarda a porta que os clientes usam para enviar
-        self.porta_enviar_cliente = []  # Porta que deve ser usada para enviar mensagem aos clientes
+        self.porta_enviar_cliente = {}  # Mapeia o IP do cliente para a(s) porta(s) que deve(m) ser usada(s) para
+        # enviar mensagens
         self.lock = threading.Lock()
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind(('0.0.0.0', DISCOVERY_PORT))
         self.server_name = "Server UFV"
         self.num_players = 0
-        self.players_name = []  # Lista com os nomes
-        self.players_data = []  # Lista de jogadores e seus dados
+        self.players_name = []  # Lista com os nomes dos jogadores
+        self.players_data = []  # Lista de dados dos jogadores
         print(f"Servidor de descoberta iniciado na porta {DISCOVERY_PORT}")
         self.game_data = GameData()
 
@@ -41,6 +46,7 @@ class Server:
     def handle_discovery(self):
         while True:
             data, addr = self.server_socket.recvfrom(1024)
+            client_ip = addr[0]  # Extrai apenas o IP do cliente
 
             message = Message.from_bytes(data)
             if message.message_type == Message.HANDSHAKE:
@@ -52,7 +58,8 @@ class Server:
             elif message.message_type == Message.CONNECT:
                 port = self.get_available_port()
                 if self.num_players < MAX_CLIENTS and port:
-                    self.porta_receber_cliente[addr] = port
+                    # Adiciona a entrada para o novo IP, sem sobrescrever IPs diferentes
+                    self.porta_receber_cliente[client_ip] = port
                     response = Message(Message.CONNECT, port)
                     self.server_socket.sendto(response.to_bytes(), addr)
                     print(f"Conexão com {addr} na porta {port}")
@@ -76,12 +83,11 @@ class Server:
             print(f"Servidor de comunicação iniciado na porta {port}")
 
             # Função para enviar mensagem aos clientes
-            def send_message(host, server_client_port, mensagem_a_ser_enviada):
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as enviar:
-                    enviar.sendto(mensagem_a_ser_enviada.to_bytes(), (host, server_client_port))
 
             while True:
                 conn, addr = s.accept()
+                client_ip = addr[0]  # Extrai apenas o IP do cliente
+
                 with conn:
                     print(f"Conexão estabelecida com {addr}")
                     try:
@@ -99,46 +105,45 @@ class Server:
                             # Salva o dado dos jogadores conectados
                             self.players_data.append(message.data)
 
-                            # self.game_data.add_player({message.data['player_name']}, {message.data['deck']}, addr)
+                            self.game_data.add_player({message.data['player_name']}, {message.data['deck']})
 
                             # Verifica se o número de jogadores é 3
-                            if self.num_players == 3:
-                                # Envia a mensagem para todas as portas para iniciar o jogo
-                                for port in self.porta_enviar_cliente:
-                                    start_game_message = Message(Message.START_GAME, "O jogo está começando!")
-                                    send_message(addr[0], port, start_game_message)
+                            if len(self.players_data) == 3:
+                                self.start_game(self.porta_enviar_cliente)
 
                         # Recebe a porta para poder enviar mensagens ao cliente
                         elif message.message_type == Message.CLIENT_PORT:
+                            self.game_data.add_port(message.data['player_port'])
+                            # Se o IP já existe no dicionário, adiciona a nova porta à lista
+                            if client_ip in self.porta_enviar_cliente:
+                                self.porta_enviar_cliente[client_ip].append(message.data['player_port'])
+                            else:
+                                self.porta_enviar_cliente[client_ip] = [message.data['player_port']]
 
-                            # Atualiza a porta do cliente
-                            self.porta_enviar_cliente.append(message.data['player_port'])
                             nome = message.data['nome_jogador']
-
                             self.players_name.append(nome)
 
-                            # Envia a mensagem para todas as portas que um novo jogador entrou
-                            for port in self.porta_enviar_cliente:
+                            # Envia a mensagem para todos os clientes que um novo jogador entrou
+                            for client_ip, client_ports in self.porta_enviar_cliente.items():
                                 # Cria a mensagem com o nome do novo jogador e a lista de jogadores conectados
                                 message = Message(Message.NEW_PLAYER, {"Nome": nome, "Jogadores": self.players_name})
-                                send_message(addr[0], port, message)
+                                for client_port in client_ports:
+                                    send_message(client_ip, client_port, message)
+
 
                         # Desconecta um cliente e envia para todos os outros
                         elif message.message_type == Message.DISCONNECT:
                             response = Message(Message.DISCONNECT, "Disconnect")
                             conn.sendall(response.to_bytes())
                             print(f"Desconexão com {addr}")
-                            self.disconnect(addr)
+                            self.disconnect(client_ip, message.data['player_port'])
 
                             # Envia mensagem de desconexão para todos os clientes
-
-                            for port in self.porta_enviar_cliente:
+                            for client_ip, client_ports in self.porta_enviar_cliente.items():
                                 message_disconnect = Message(Message.DISCONNECT, "A user has disconnected.")
-                                send_message(addr[0], port, message_disconnect)
+                                for client_port in client_ports:
+                                    send_message(client_ip, client_port, message_disconnect)
 
-                        # Começa de fato, o jogo
-                        elif message.message_type == Message.START_GAME:
-                            self.start_game()
 
                         else:
                             response = Message(Message.TYPO_ERROR, "Unknown message type " + str(message.message_type))
@@ -154,15 +159,18 @@ class Server:
                     return port
         return None
 
-    def disconnect(self, addr):
+    def disconnect(self, client_ip, player_port):
         with self.lock:
-            if addr in self.porta_receber_cliente:
-                port = self.porta_receber_cliente[addr]
-                del self.porta_receber_cliente[addr]
-                print(f"Cliente {addr} desconectado da porta {port}")
+            if client_ip in self.porta_receber_cliente:
+                if player_port in self.porta_enviar_cliente.get(client_ip, []):
+                    self.porta_enviar_cliente[client_ip].remove(player_port)
+                    if not self.porta_enviar_cliente[client_ip]:  # Remove o IP se não tiver mais portas associadas
+                        del self.porta_enviar_cliente[client_ip]
+                    print(f"Cliente {client_ip}:{player_port} desconectado")
 
     # PRECISA ARRUMAR ISSO AQUI TA TUDO ERADO ESSA BOSTA!!
-    # def start_game(self):
+    # TEM QUE ENVIAR PARA A porta de envio
+
     # for addr in:
     # start_game_message = Message(Message.START_GAME, self.game_data.compact(addr))
     # try:
@@ -170,6 +178,19 @@ class Server:
     # udp_socket.sendto(start_game_message.to_bytes(), addr)
     # except Exception as e:
     # print(f"Erro ao enviar mensagem de início de jogo para {addr}: {e}")
+
+    def start_game(self, ips_e_portas):
+
+        # Associaar aos jogadores
+        self.game_data.associate_ports_to_players()
+
+        # Envia a mensagem de início do jogo para todos os IPs e portas
+        for client_ip, client_ports in ips_e_portas.items():
+            for client_port in client_ports:
+                # Cria a mensagem de início do jogo com dados compactados
+                message_data_compact = Message(Message.START_GAME, self.game_data.compact(client_port))
+                # Envia a mensagem compactada para o cliente
+                send_message(client_ip, client_port, message_data_compact)
 
 
 if __name__ == '__main__':

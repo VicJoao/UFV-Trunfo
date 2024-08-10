@@ -161,7 +161,7 @@ class ClientView:
         self.create_button("Back", screen_width / 2, screen_height / 2 + 150, 100, 50,
                            lambda: update_screen("MAIN MENU"))
 
-    def create_card_screen(self, update_screen):
+    def create_card_screen(self,user, update_screen):
         screen_info = pygame.display.Info()
         screen_width = screen_info.current_w
         screen_height = screen_info.current_h
@@ -186,7 +186,7 @@ class ClientView:
         self.create_button("Cancel", screen_width / 2 - 100, screen_height / 2 + 280, 150, 50,
                            lambda : update_screen("CLIENT MAIN SCREEN"))
         self.create_button("Submit", screen_width / 2 + 100, screen_height / 2 + 280, 150, 50,
-                           lambda: self.call_submit_card(update_screen))
+                           lambda: self.call_submit_card(user, update_screen))
 
     def display_user_cards(self, user, update_screen):
         print("[!] Display User Cards: ClientView.display_user_cards()")
@@ -283,21 +283,23 @@ class ClientView:
             self.img_filename = filename  # Carregar a imagem
             self.txt = self.super_small_font.render(f"Selected: {filename}", True, (255, 255, 255))
 
-    def call_submit_card(self, update_screen):
+    def call_submit_card(self,user, update_screen):
         print("Submitting card...")
+        if not user.did_create_card:
+            try:
+                for i in range(1, len(self.textboxes)):
+                    self.submission[list(self.submission.keys())[i]] = int(self.textboxes[i].get_text())
+            except ValueError:
+                print("Invalid number. Please try again.") # @TODO: Implementar notificação de erro
+                update_screen("CREATE CARD DIALOG")
+                return
+            self.submission["name"] = self.textboxes[0].get_text()
+            self.submission["image"] = self.img_filename
 
-        try:
-            for i in range(1, len(self.textboxes)):
-                self.submission[list(self.submission.keys())[i]] = int(self.textboxes[i].get_text())
-        except ValueError:
-            print("Invalid number. Please try again.") # @TODO: Implementar notificação de erro
-            update_screen("CREATE CARD DIALOG")
-            return
-        self.submission["name"] = self.textboxes[0].get_text()
-        self.submission["image"] = self.img_filename
-
-        print("Submission complete! Please check:\n", self.submission) # @TODO: Implementar notificação de erro
-
+            print("Submission complete! Please check:\n", self.submission) # @TODO: Implementar notificação de erro
+            user.did_create_card = True
+        else:
+            print("You have already created a card!") #@TODO: Implementar notificação de erro
         # @TODO: Colocar no banco de dados
         update_screen("CLIENT MAIN SCREEN")
 

@@ -1,11 +1,14 @@
+import os
+from dotenv import load_dotenv
 import pygame
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from matplotlib import pyplot as plt
-
+load_dotenv()
 class Card(pygame.sprite.Sprite):
-    def __init__(self, name, intelligence, charisma, sport, humor, creativity, appearance, image, pos=(120, 180)):
+    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance, image='src/assets/default.jpg', pos=(120, 180)):
         pygame.sprite.Sprite.__init__(self)
+        self.id = id
         self.name = name
         self.intelligence = self._validate_stat(intelligence, "intelligence")
         self.charisma = self._validate_stat(charisma, "charisma")
@@ -14,18 +17,18 @@ class Card(pygame.sprite.Sprite):
         self.creativity = self._validate_stat(creativity, "creativity")
         self.appearance = self._validate_stat(appearance, "appearance")
 
-        self.image = self.pil_to_pygame(self.gen_card_img(self.pygame_to_pil(image)))
+        self.image = self.pil_to_pygame(self.gen_card_img(Image.open(image)))
         # self.image = pygame.transform.scale(self.image, (200, 300))
 
         # Obter o retângulo da imagem
         self.rect = self.image.get_rect()
-        self.pos = self.get_card_pos()
 
     def get_card_pos(self):
         return self.rect.center
 
     def set_card_pos(self, pos):
         self.rect.center = pos
+
     def gen_card_img(self, selfie):
         card_image = Image.open("src/assets/teste.png")
         name_tag = Image.open("src/assets/name_tag.png")
@@ -84,6 +87,9 @@ class Card(pygame.sprite.Sprite):
     def get_name(self):
         return self.name
 
+    def get_id(self):
+        return self.id
+
     def get_intelligence(self):
         return self.intelligence
 
@@ -122,6 +128,7 @@ class Card(pygame.sprite.Sprite):
 
     def set_appearance(self, appearance):
         self.appearance = self._validate_stat(appearance, "appearance")
+
 
     def pil_to_pygame(self, image):
         mode = image.mode

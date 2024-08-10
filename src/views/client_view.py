@@ -24,7 +24,7 @@ class ClientView:
         pygame.display.set_caption("Menu Inicial do Jogo")
 
         self.current_state = "NOT INITIALIZED"
-        self.img = None
+        self.img_filename = None
         self.txt = None
         self.submission = {
             "name": None,
@@ -36,37 +36,9 @@ class ClientView:
             "appearance": None,
             "image": None
         }
-        self.all_cards = [
-            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
-            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/selfie.jpg")),
-            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
-            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/selfie.jpg")),
-            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
-            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/selfie.jpg")),
-            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
-            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/selfie.jpg")),
-            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
-            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/selfie.jpg")),
-            Card(name="Igor Nascimento", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/igor_nascimento_profile.jpeg")),
-            Card(name="Miguel Ribeiro", intelligence=4, charisma=3, sport=2, humor=5, creativity=3, appearance=3,
-                 image=pygame.image.load("src/assets/selfie.jpg")),
-
-        ]
+        self.all_cards = []
 
         self.all_sprites = pygame.sprite.Group()
-        for card in self.all_cards:
-            self.all_sprites.add(card)
 
         self.buttons = []
         self.textboxes = []
@@ -100,6 +72,8 @@ class ClientView:
         self.main_menu_text.append(self.normal_font.render("Please select an user:", True, (255, 255, 255)))
 
         for i, name in users: # @FIXME: Se forem muitos usuários, a tela vai ficar bugada
+
+
             width = screen_width / 2
             height = screen_height / 2 - 300 + i * 60
 
@@ -107,10 +81,12 @@ class ClientView:
             self.create_button(name, width, height, 300, 50,
                                update_screen, "CLIENT MAIN SCREEN")
 
-        self.create_button("Create new user", screen_width / 2, screen_height / 2 + 150, 300, 50,
+        self.main_menu_text.append(self.normal_font.render("Or create a new one:", True, (255, 255, 255)))
+
+        self.create_button("Create new user", screen_width / 2, screen_height / 2 + 210, 300, 50,
                             lambda: update_screen("CREATE USER"))
 
-        self.create_button("Exit", screen_width / 2, screen_height / 2 + 210, 300, 50,
+        self.create_button("Exit", screen_width / 2, screen_height / 2 + 270, 300, 50,
                             sys.exit)
 
     def client_menu_screen(self, update_screen):
@@ -136,7 +112,7 @@ class ClientView:
         self.create_button("Back", screen_width / 2, screen_height / 2 + 150, 100, 50,
                            lambda: update_screen("MAIN MENU"))
 
-    def create_card_dialog(self, update_screen):
+    def create_card_screen(self, update_screen):
         screen_info = pygame.display.Info()
         screen_width = screen_info.current_w
         screen_height = screen_info.current_h
@@ -169,9 +145,9 @@ class ClientView:
         screen_width = screen_info.current_w
         screen_height = screen_info.current_h
 
-        print(user.get_user_cards())
-
-
+        print(len(user.get_cards()))
+        if not self.all_cards:
+            self.draw_cards(user.get_cards())
 
         self.create_button("Back", screen_width - 50, 50, 100, 50,
                            lambda: update_screen("CLIENT MAIN SCREEN"))
@@ -209,20 +185,22 @@ class ClientView:
     def create_new_user(self, ):
         print("[!] Create New User: ClientView.create_new_user()")
 
-    def draw_cards(self, user_cards, posx=0, posy=200):
-
+    def draw_cards(self, user_cards, posx=-70, posy=120):
+        print("[!] Draw Cards: ClientView.draw_cards()")
         for i in range (0,len(user_cards)):
             card = user_cards[i]
-            print(card)
             if posx < 1000:
                 posx += 180
             else:
-                posx = 180
+                posx = 110
                 posy += 300
 
+            print(f"{posx}, {posy}")
             card.set_card_pos((posx, posy))
+            #print(card.pos)
 
             self.all_cards.append(card)
+
 
 
     def draw_widgets(self):
@@ -235,10 +213,21 @@ class ClientView:
                 textbox.draw(self.screen)
 
             if self.current_state == "DISPLAY USER CARDS":
-                self.draw_cards(self.all_cards)
+                # self.draw_cards(self.all_cards)
+                for card in self.all_cards:
+                    self.screen.blit(card.image, card.get_card_pos())
+
+            elif self.current_state == "MAIN MENU":
+                screen_info = pygame.display.Info()
+                screen_width = screen_info.current_w
+                screen_height = screen_info.current_h
+
+                self.screen.blit(self.main_menu_text[0], (screen_width / 2 - 200, screen_height / 2 - 200))
+                self.screen.blit(self.main_menu_text[1], (screen_width / 2 - 200, screen_height / 2 - 150))
+                self.screen.blit(self.main_menu_text[2], (screen_width / 2 - 200, screen_height / 2 + 150))
 
             elif self.current_state == "CREATE CARD DIALOG":
-                if self.img:
+                if self.img_filename:
                     screen_info = pygame.display.Info()
                     screen_width = screen_info.current_w
                     screen_height = screen_info.current_h
@@ -270,7 +259,7 @@ class ClientView:
         filename = "src/assets/selfie.jpg"
 
         if filename:  # Se o usuário escolheu um arquivo
-            self.img = pygame.image.load(filename)  # Carregar a imagem
+            self.img_filename = filename  # Carregar a imagem
             self.txt = self.super_small_font.render(f"Selected: {filename}", True, (255, 255, 255))
 
     def call_submit_card(self, update_screen):
@@ -284,7 +273,7 @@ class ClientView:
             update_screen("CREATE CARD DIALOG")
             return
         self.submission["name"] = self.textboxes[0].get_text()
-        self.submission["image"] = self.img
+        self.submission["image"] = self.img_filename
 
         print("Submission complete! Please check:\n", self.submission) # @TODO: Implementar notificação de erro
 

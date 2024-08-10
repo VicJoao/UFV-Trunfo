@@ -31,7 +31,7 @@ class ClientController:
 
         elif self.get_current_state() == "CREATE CARD DIALOG":
             # print("[!] Create Card Dialog: ClientView.create_card_dialog()")
-            self.view.create_card_dialog(self.update_screen)
+            self.view.create_card_screen(self.update_screen)
 
         elif self.get_current_state() == "DISPLAY USER CARDS":
             self.view.display_user_cards(self.user, self.update_screen)

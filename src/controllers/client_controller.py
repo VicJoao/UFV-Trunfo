@@ -20,6 +20,8 @@ def get_card_attributes():
 
 class ClientController:
     def __init__(self, banco_de_dados_do_cliente):
+
+        # Tkinter
         self.exit_user_button = None
         self.create_user_button = None
         self.user_label = None
@@ -32,6 +34,7 @@ class ClientController:
         self.label = None
         self.user_menu_frame = None
         self.menu_frame = None
+
         self.client_db = banco_de_dados_do_cliente
         self.user = None
         self.client_model = ClientModel(self.client_db)

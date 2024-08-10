@@ -5,36 +5,25 @@ from tkinter.filedialog import askopenfilename
 import pygame
 import os
 from views.textbox_view import TextBox
-from views.button_view import Button
+from views.button import Button
 from models.card import Card
 import sys
 from PIL import Image
+
+
 class ClientView:
     def __init__(self):
+        self.all_users = None
         pygame.font.init()
         self.normal_font = pygame.font.Font(os.getenv("FONT"), 25)
         self.small_font = pygame.font.Font(os.getenv("FONT"), 20)
-        self.supersmall_font = pygame.font.Font(os.getenv("FONT"), 10)
+        self.super_small_font = pygame.font.Font(os.getenv("FONT"), 10)
 
         self.screen = pygame.display.set_mode((1280, 720))
         self.clock = pygame.time.Clock()
         pygame.display.set_caption("Menu Inicial do Jogo")
-        self.states = {
-            "NOT INITIALIZED": "NOT INITIALIZED",
-            "MAIN MENU": "MAIN MENU",
-            "CLIENT MAIN SCREEN": "CLIENT MAIN SCREEN",
-            "CREATE CARD DIALOG": "CREATE CARD DIALOG",
-            "DISPLAY USER CARDS": "DISPLAY USER CARDS",
-            "EDIT DECK DIALOG": "EDIT DECK DIALOG",
-            "FIND MATCH": "FIND MATCH",
-            "CREATE MATCH DIALOG": "CREATE MATCH DIALOG",
-            "ADD CARD TO DECK": "ADD CARD TO DECK",
-            "DISPLAY USER DECK": "DISPLAY USER DECK",
-            "REMOVE CARD FROM DECK": "REMOVE CARD FROM DECK",
 
-        }
-
-        self.current_state = 0
+        self.current_state = "NOT INITIALIZED"
         self.img = None
         self.txt = None
         self.submission = {
@@ -81,136 +70,73 @@ class ClientView:
 
         self.buttons = []
         self.textboxes = []
+        self.main_menu_text = []
 
-
-    def create_button(self, text, x, y, width, height, action):
-        button = Button(text, x, y, width, height, self.normal_font, action)
+    def create_button(self, text, x, y, width, height, action=None, screen_name=None):
+        button = Button(text, x, y, width, height, self.normal_font, action, screen_name)
         self.buttons.append(button)
 
     def create_textbox(self, x, y, width, height, font, placeholder, limit):
         textbox = TextBox(int(x), int(y), int(width), int(height), font, placeholder=placeholder, limit=limit)
         self.textboxes.append(textbox)
 
-    def run(self):
-        # Inicializar o Pygame
-        pygame.init()
-        self.change_state(self.states["CLIENT MAIN SCREEN"])
-        self.load_state()
-        # self.teste_login()
-
     def change_state(self, state):
         print(f"[!] Changing State: {self.current_state} -> {state}")
-        self.buttons = []
-        self.textboxes = []
+        self.buttons.clear()
+        self.textboxes.clear()
+        self.all_sprites.empty()
+        self.all_cards.clear()
+        print("Buttons: ", self.buttons)
+        print("Textboxes: ", self.textboxes)
         self.current_state = state
 
-    def load_state(self):
-        #while True:
-        # print(f"[!] Current State: {self.current_state}")
-        if self.current_state == "NOT INITIALIZED":
-            pass
-        elif self.current_state == "MAIN MENU":
-            self.main_menu_screen()
-        elif self.current_state == "CLIENT MAIN SCREEN":
-            # print("[!] Client Main Screen: ClientView.client_main_screen()")
-            self.client_main_screen()
-        elif self.current_state == "CREATE CARD DIALOG":
-            # print("[!] Create Card Dialog: ClientView.create_card_dialog()")
-            self.create_card_dialog()
-        elif self.current_state == "DISPLAY USER CARDS":
-            self.display_user_cards()
-        elif self.current_state == "EDIT DECK DIALOG":
-            # print("[!] Edit Deck Dialog: ClientView.edit_deck_dialog()")
-            self.edit_deck_dialog()
-        elif self.current_state == "FIND MATCH":
-            self.find_match()
-        elif self.current_state == "CREATE MATCH DIALOG":
-            self.create_match_dialog()
-        elif self.current_state == "ADD CARD TO DECK":
-            self.add_card_to_deck()
-        elif self.current_state == "DISPLAY USER DECK":
-            self.display_user_deck()
-        elif self.current_state == "REMOVE CARD FROM DECK":
-            self.remove_card_from_deck()
+    def main_menu_screen(self, users, update_screen):
+        print("[!] Main Menu Screen: ClientView.main_menu_screen()")
+        screen_info = pygame.display.Info()
+        screen_width = screen_info.current_w
+        screen_height = screen_info.current_h
 
-        self.draw_widgets()
+        self.main_menu_text.append(self.normal_font.render("Welcome to Florestrunfo!", True, (255, 255, 255)))
+        self.main_menu_text.append(self.normal_font.render("Please select an user:", True, (255, 255, 255)))
 
-    def main_menu_screen(self):
-        print("[!] Create Widgets: ClientView.create_widgets()")
+        for i, name in users: # @FIXME: Se forem muitos usuários, a tela vai ficar bugada
+            width = screen_width / 2
+            height = screen_height / 2 - 300 + i * 60
+            # banana = lambda : update_screen("CLIENT MAIN SCREEN", username=name)
+            print(name)
+            self.create_button(name, width, height, 300, 50,
+                               update_screen, "CLIENT MAIN SCREEN")
 
-    def client_main_screen(self):
+        self.create_button("Create new user", screen_width / 2, screen_height / 2 + 150, 300, 50,
+                            lambda: update_screen("CREATE USER"))
+
+        self.create_button("Exit", screen_width / 2, screen_height / 2 + 210, 300, 50,
+                            sys.exit)
+
+    def client_menu_screen(self, update_screen):
         screen_info = pygame.display.Info()
         screen_width = screen_info.current_w
         screen_height = screen_info.current_h
 
         self.create_button("Create a new card", screen_width / 2, screen_height / 2 - 150, 300, 50,
-                           lambda: self.call_create_card_screen())
+                           lambda: update_screen("CREATE CARD DIALOG"))
 
         self.create_button("Show all cards", screen_width/2, screen_height/2 - 90, 300, 50,
-                            lambda: self.call_display_user_cards()) # @TODO: Implementar a chamada da tela de exibição de cartas
+                            lambda: update_screen("DISPLAY USER CARDS"))
 
         self.create_button("Edit Deck", screen_width/2, screen_height/2 - 30, 300, 50,
-                           lambda: self.call_edit_deck_screen())
+                           lambda: update_screen("EDIT DECK DIALOG"))
 
         self.create_button("Find a match", screen_width/2, screen_height/2 + 30, 300, 50,
                            lambda: self.find_match()) # @TODO: Implementar a chamada da tela de busca de partidas
+
         self.create_button("Create a match", screen_width/2, screen_height/2 + 90, 300, 50,
                            lambda: self.create_match_dialog()) # @TODO: Implementar a chamada da tela de criação de partidas
+
         self.create_button("Back", screen_width / 2, screen_height / 2 + 150, 100, 50,
-                           lambda: self.main_menu_screen()) # @TODO: Implementar a chamada da tela de menu principal
+                           lambda: update_screen("MAIN MENU"))
 
-    def draw_widgets(self):
-        while True:
-            self.screen.fill((0, 77, 0))
-            self.handle_events()
-            for button in self.buttons:
-                button.draw(self.screen)
-
-            for textbox in self.textboxes:
-                textbox.draw(self.screen)
-
-            if self.current_state == "DISPLAY USER CARDS":
-                self.draw_cards(self.all_cards)
-
-            pygame.display.flip()
-            self.clock.tick(60)
-
-
-    def draw_cards(self, all_cards):
-        all_sprites = pygame.sprite.Group() # @TODO: Implementar classe DECK <- justamente o que preciso aqui
-
-        x = 0
-        y = 200
-        for i in range (0,len(all_cards)):
-            card = all_cards[i]
-            if x < 1000:
-                x += 180
-            else:
-                x = 180
-                y += 300
-
-            card.set_card_pos((x, y))
-
-            all_sprites.add(card)
-
-        all_sprites.draw(self.screen)
-
-
-
-
-    def handle_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-
-            for button in self.buttons:
-                button.handle_event(event)
-
-            for textbox in self.textboxes:
-                textbox.handle_event(event)
-
-    def create_card_dialog(self):
+    def create_card_dialog(self, update_screen):
         screen_info = pygame.display.Info()
         screen_width = screen_info.current_w
         screen_height = screen_info.current_h
@@ -233,24 +159,24 @@ class ClientView:
                                 placeholder='Appearance', limit=2)
 
         self.create_button("Cancel", screen_width / 2 - 100, screen_height / 2 + 280, 150, 50,
-                           lambda : self.call_client_main_screen())
+                           lambda : update_screen("CLIENT MAIN SCREEN"))
         self.create_button("Submit", screen_width / 2 + 100, screen_height / 2 + 280, 150, 50,
-                           lambda: self.call_submit_card())
+                           lambda: self.call_submit_card(update_screen))
 
-
-    def display_user_cards(self):
+    def display_user_cards(self, user, update_screen):
         print("[!] Display User Cards: ClientView.display_user_cards()")
         screen_info = pygame.display.Info()
         screen_width = screen_info.current_w
         screen_height = screen_info.current_h
+        print(user.get_name())
+        print(user.get_cards())
+
+
 
         self.create_button("Back", screen_width - 50, 50, 100, 50,
-                           lambda: self.call_client_main_screen())
+                           lambda: update_screen("CLIENT MAIN SCREEN"))
 
-
-
-
-    def edit_deck_dialog(self):
+    def edit_deck_dialog(self, update_screen):
         screen_info = pygame.display.Info()
         screen_width = screen_info.current_w
         screen_height = screen_info.current_h
@@ -263,23 +189,78 @@ class ClientView:
                                   lambda: self.display_user_deck()) # @TODO: Implementar a chamada da tela de exibição do deck
 
         self.create_button("Back", screen_width / 2, screen_height / 2 + 90, 100, 50,
-                             lambda: self.call_client_main_screen())
+                             lambda: update_screen("CLIENT MAIN SCREEN"))
 
-
-    def find_match(self):
+    def find_match(self, ):
         print("[!] Find Match: ClientView.find_match()")
 
-    def create_match_dialog(self):
+    def create_match_dialog(self, ):
         print("[!] Create Match Dialog: ClientView.create_match_dialog()")
 
-    def add_card_to_deck(self):
+    def add_card_to_deck(self, ):
         print("[!] Add Card to Deck: ClientView.add_card_to_deck()")
 
-    def display_user_deck(self):
+    def display_user_deck(self, ):
         print("[!] Display User Deck: ClientView.display_user_deck()")
 
-    def remove_card_from_deck(self):
+    def remove_card_from_deck(self, ):
         print("[!] Remove Card from Deck: ClientView.remove_card_from_deck()")
+
+    def create_new_user(self, ):
+        print("[!] Create New User: ClientView.create_new_user()")
+
+    def draw_cards(self, user_cards, posx=0, posy=200):
+
+        for i in range (0,len(user_cards)):
+            card = user_cards[i]
+            print(card)
+            if posx < 1000:
+                posx += 180
+            else:
+                posx = 180
+                posy += 300
+
+            card.set_card_pos((posx, posy))
+
+            self.all_cards.append(card)
+
+
+    def draw_widgets(self):
+        while True:
+            self.screen.fill((0, 77, 0))
+            for button in self.buttons:
+                button.draw(self.screen)
+
+            for textbox in self.textboxes:
+                textbox.draw(self.screen)
+
+            if self.current_state == "DISPLAY USER CARDS":
+                self.draw_cards(self.all_cards)
+
+            elif self.current_state == "CREATE CARD DIALOG":
+                if self.img:
+                    screen_info = pygame.display.Info()
+                    screen_width = screen_info.current_w
+                    screen_height = screen_info.current_h
+
+                    self.screen.blit(self.txt, (screen_width / 2 + 200, screen_height / 2 - 220))
+
+            self.handle_events()
+
+            pygame.display.flip()
+            self.clock.tick(60)
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for button in self.buttons:
+                    button.handle_event(event)
+
+            for textbox in self.textboxes:
+                textbox.handle_event(event)
 
     def upload_img(self):
         # @TODO: Implementar a seleção de arquivo
@@ -290,50 +271,23 @@ class ClientView:
 
         if filename:  # Se o usuário escolheu um arquivo
             self.img = pygame.image.load(filename)  # Carregar a imagem
-            self.txt = self.supersmall_font.render(f"Selected: {filename}", True, (255, 255, 255))
+            self.txt = self.super_small_font.render(f"Selected: {filename}", True, (255, 255, 255))
 
-
-    def call_create_card_screen(self):
-        print("Calling...")
-        self.change_state("CREATE CARD DIALOG")
-        self.load_state()
-
-    def call_edit_deck_screen(self):
-        print("Calling...")
-        self.change_state("EDIT DECK DIALOG")
-        self.load_state()
-
-    def call_client_main_screen(self):
-        print("Calling...")
-        self.change_state("CLIENT MAIN SCREEN")
-        self.load_state()
-
-    def call_submit_card(self):
+    def call_submit_card(self, update_screen):
         print("Submitting...")
 
         try:
             for i in range(1, len(self.textboxes)):
                 self.submission[list(self.submission.keys())[i]] = int(self.textboxes[i].get_text())
         except ValueError:
-            print("Invalid number. Please try again.")
-            self.load_state()
+            print("Invalid number. Please try again.") # @TODO: Implementar notificação de erro
+            update_screen("CREATE CARD DIALOG")
             return
         self.submission["name"] = self.textboxes[0].get_text()
         self.submission["image"] = self.img
 
-        print("Submission complete! Please check:\n", self.submission)
-
-        new_card = Card(self.submission["name"], self.submission["intelligence"], self.submission["charisma"],
-                        self.submission["sport"], self.submission["humor"], self.submission["creativity"],
-                        self.submission["appearance"], self.submission["image"])
-
-        new_card.show()
+        print("Submission complete! Please check:\n", self.submission) # @TODO: Implementar notificação de erro
 
         # @TODO: Colocar no banco de dados
-        self.change_state("CLIENT MAIN SCREEN")
-        self.load_state()
+        update_screen("CLIENT MAIN SCREEN")
 
-    def call_display_user_cards(self):
-        print("Calling...")
-        self.change_state("DISPLAY USER CARDS")
-        self.load_state()

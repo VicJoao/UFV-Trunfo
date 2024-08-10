@@ -141,6 +141,46 @@ class ClientModel:
         finally:
             conn.close()
 
+    def get_if_create_card(self, user_id):
+        try:
+            conn = sqlite3.connect(self.database)
+            c = conn.cursor()
+
+            # Obter se o cliente já criou a carta OU a coluna did_create_card será 1
+            c.execute("SELECT did_create_card FROM users WHERE user_id = ?", (user_id,))
+            result = c.fetchone()
+
+            if result:
+                return result[0] == 1
+            else:
+                return False
+
+        except sqlite3.Error as e:
+            print(f"An error occurred: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def set_did_create_card(self, user_id, value):
+        try:
+            conn = sqlite3.connect(self.database)
+            c = conn.cursor()
+
+            # Atualizar a coluna did_create_card para o valor especificado
+            c.execute("UPDATE users SET did_create_card = ? WHERE user_id = ?", (value, user_id))
+
+            # Salvar (commit) as mudanças no banco de dados
+            conn.commit()
+
+        except sqlite3.Error as e:
+            print(f"An error occurred: {e}")
+            return False
+        finally:
+            conn.close()
+
+        return True
+
+
 
     def remove_card_from_deck(self, user_id, card_name):
         try:

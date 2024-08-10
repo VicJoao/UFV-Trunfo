@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 load_dotenv()
 class Card(pygame.sprite.Sprite):
-    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance, image='src/assets/default.jpg', pos=(120, 180)):
+    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance, image='assets/default.jpg', pos=(120, 180)):
         pygame.sprite.Sprite.__init__(self)
         self.id = id
         self.name = name

@@ -10,11 +10,40 @@ COMM_PORT = None
 LISTEN_PORT = 4255
 
 
+# Escanear IPS
+def get_local_ips():
+    local_ips = []
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(0)
+    try:
+        s.connect(('8.8.8.8', 1))
+        local_ip = s.getsockname()[0]
+    except Exception:
+        local_ip = '127.0.0.1'
+    finally:
+        s.close()
+
+    base_ip = '.'.join(local_ip.split('.')[:-1])
+
+    for i in range(1, 255):
+        local_ips.append(f"{base_ip}.{i}")
+
+    return local_ips
+
+
 class ServerScanner:
     def __init__(self, root):
+        self.scan_thread = None
         self.root = root
         self.is_scanning = False
         self.servers = {}
+        self.nome_jogador = ""
+        self.deck = None
+        self.listen_port = None
+        self.host = None
+        self.players_list = []
+
+        # Tkinter
         self.frame = tk.Frame(root)
         self.frame.pack(padx=10, pady=10)
 
@@ -43,12 +72,27 @@ class ServerScanner:
         self.disconnect_button.pack(pady=5)
         self.disconnect_button.config(state=tk.DISABLED)
 
-        self.nome_jogador = ""
-        self.deck = None
-        self.listen_port = None
-        self.host = None
-        self.quantidade_jogadores = 0
-        self.players_list = []
+    def show_game(self):
+        if self.frame and self.frame.winfo_exists():
+            self.frame.destroy()
+
+        self.frame = tk.Frame(self.root)
+        self.frame.pack(padx=10, pady=10)
+
+        self.players_listbox = tk.Listbox(self.frame, width=50, height=10)
+        self.players_listbox.pack()
+        self.players_listbox.config(state=tk.NORMAL)
+        self.players_listbox.insert(tk.END, f"Você está conectado! {self.nome_jogador}")
+        self.players_listbox.config(state=tk.DISABLED)
+
+        self.players_label = tk.Label(self.frame, text="Aguardando jogadores...")
+        self.players_label.pack(pady=5)
+
+        self.disconnect_button = tk.Button(self.frame, text="Desconectar", command=self.disconnect_from_server)
+        self.disconnect_button.pack(pady=5)
+
+        self.root.geometry("400x400")
+        self.root.title("Jogo")
 
     def set_user_info(self, player_name, deck):
         self.nome_jogador = player_name
@@ -69,7 +113,7 @@ class ServerScanner:
         self.stop_button.config(state=tk.DISABLED)
 
     def scan_for_servers(self):
-        ips = self.get_local_ips()
+        ips = get_local_ips()
         threads = []
 
         for ip in ips:
@@ -81,25 +125,6 @@ class ServerScanner:
 
         for thread in threads:
             thread.join()  # Aguarda todas as threads terminarem
-
-    def get_local_ips(self):
-        local_ips = []
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(0)
-        try:
-            s.connect(('8.8.8.8', 1))
-            local_ip = s.getsockname()[0]
-        except Exception:
-            local_ip = '127.0.0.1'
-        finally:
-            s.close()
-
-        base_ip = '.'.join(local_ip.split('.')[:-1])
-
-        for i in range(1, 255):
-            local_ips.append(f"{base_ip}.{i}")
-
-        return local_ips
 
     def check_discovery_port(self, host, port):
         try:
@@ -152,6 +177,8 @@ class ServerScanner:
                         self.process_new_player_message(message)
                     elif message.message_type == Message.START_GAME:
                         self.start_game()
+                    elif message.message_type == Message.DISCONNECT:
+                        print(message.data)
                     else:
                         print("MENSAGEM NAO CONHECIDA")
 
@@ -224,28 +251,6 @@ class ServerScanner:
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {host}: {e}")
-
-    def show_game(self):
-        if self.frame and self.frame.winfo_exists():
-            self.frame.destroy()
-
-        self.frame = tk.Frame(self.root)
-        self.frame.pack(padx=10, pady=10)
-
-        self.players_listbox = tk.Listbox(self.frame, width=50, height=10)
-        self.players_listbox.pack()
-        self.players_listbox.config(state=tk.NORMAL)
-        self.players_listbox.insert(tk.END, f"Você está conectado! {self.nome_jogador}")
-        self.players_listbox.config(state=tk.DISABLED)
-
-        self.players_label = tk.Label(self.frame, text="Aguardando jogadores...")
-        self.players_label.pack(pady=5)
-
-        self.disconnect_button = tk.Button(self.frame, text="Desconectar", command=self.disconnect_from_server)
-        self.disconnect_button.pack(pady=5)
-
-        self.root.geometry("400x400")
-        self.root.title("Jogo")
 
     def disconnect_from_server(self):
         try:

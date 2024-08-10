@@ -26,6 +26,8 @@ class ClientView:
         self.current_state = "NOT INITIALIZED"
         self.img_filename = None
         self.txt = None
+        self.username = None
+
         self.submission = {
             "name": None,
             "intelligence": None,
@@ -43,6 +45,56 @@ class ClientView:
         self.buttons = []
         self.textboxes = []
         self.main_menu_text = []
+
+
+    def draw_widgets(self):
+        while True:
+            self.screen.fill((0, 77, 0))
+            for button in self.buttons:
+                button.draw(self.screen)
+
+            for textbox in self.textboxes:
+                textbox.draw(self.screen)
+
+            if self.current_state == "DISPLAY USER CARDS":
+                # self.draw_cards(self.all_cards)
+                for card in self.all_cards:
+                    self.screen.blit(card.image, card.get_card_pos())
+
+            elif self.current_state == "MAIN MENU":
+                screen_info = pygame.display.Info()
+                screen_width = screen_info.current_w
+                screen_height = screen_info.current_h
+
+                text_rect = self.main_menu_text[0].get_rect(center=(screen_width / 2, screen_height / 2 - 330))
+                self.screen.blit(self.main_menu_text[0], text_rect)
+
+                text_rect = self.main_menu_text[1].get_rect(center=(screen_width / 2, screen_height / 2 - 280))
+                self.screen.blit(self.main_menu_text[1], text_rect)
+
+                text_rect = self.main_menu_text[2].get_rect(center=(screen_width / 2, screen_height / 2 + 170))
+                self.screen.blit(self.main_menu_text[2], text_rect)
+
+            elif self.current_state == "CREATE CARD DIALOG":
+                if self.img_filename:
+                    screen_info = pygame.display.Info()
+                    screen_width = screen_info.current_w
+                    screen_height = screen_info.current_h
+
+                    self.screen.blit(self.txt, (screen_width / 2 + 200, screen_height / 2 - 220))
+
+            elif self.current_state == "CREATE USER DIALOG":
+                screen_info = pygame.display.Info()
+                screen_width = screen_info.current_w
+                screen_height = screen_info.current_h
+
+                self.screen.blit(self.main_menu_text[2], screen_width / 2, screen_height / 2 - 100)
+
+            self.handle_events()
+
+            pygame.display.flip()
+            self.clock.tick(60)
+
 
     def create_button(self, text, x, y, width, height, action=None, screen_name=None):
         button = Button(text, x, y, width, height, self.normal_font, action, screen_name)
@@ -72,12 +124,9 @@ class ClientView:
         self.main_menu_text.append(self.normal_font.render("Please select an user:", True, (255, 255, 255)))
 
         for i, name in users: # @FIXME: Se forem muitos usuários, a tela vai ficar bugada
-
-
             width = screen_width / 2
             height = screen_height / 2 - 300 + i * 60
 
-            print(name)
             self.create_button(name, width, height, 300, 50,
                                update_screen, "CLIENT MAIN SCREEN")
 
@@ -182,8 +231,18 @@ class ClientView:
     def remove_card_from_deck(self, ):
         print("[!] Remove Card from Deck: ClientView.remove_card_from_deck()")
 
-    def create_new_user(self, ):
+    def create_new_user(self, update_screen):
         print("[!] Create New User: ClientView.create_new_user()")
+        screen_info = pygame.display.Info()
+        screen_width = screen_info.current_w
+        screen_height = screen_info.current_h
+
+        self.create_textbox(screen_width / 2, screen_height / 2 - 50, 350, 50, self.small_font,
+                            placeholder='First and last name', limit=15)
+        self.create_button("Submit", screen_width / 2 + 100, screen_height / 2 + 50, 150, 50,
+                           lambda: self.submit_new_user(update_screen))
+        self.create_button("Cancel", screen_width / 2 - 100, screen_height / 2 + 50, 150, 50,
+                           lambda: update_screen("MAIN MENU"))
 
     def draw_cards(self, user_cards, posx=-70, posy=120):
         print("[!] Draw Cards: ClientView.draw_cards()")
@@ -200,44 +259,6 @@ class ClientView:
             #print(card.pos)
 
             self.all_cards.append(card)
-
-
-
-    def draw_widgets(self):
-        while True:
-            self.screen.fill((0, 77, 0))
-            for button in self.buttons:
-                button.draw(self.screen)
-
-            for textbox in self.textboxes:
-                textbox.draw(self.screen)
-
-            if self.current_state == "DISPLAY USER CARDS":
-                # self.draw_cards(self.all_cards)
-                for card in self.all_cards:
-                    self.screen.blit(card.image, card.get_card_pos())
-
-            elif self.current_state == "MAIN MENU":
-                screen_info = pygame.display.Info()
-                screen_width = screen_info.current_w
-                screen_height = screen_info.current_h
-
-                self.screen.blit(self.main_menu_text[0], (screen_width / 2 - 200, screen_height / 2 - 200))
-                self.screen.blit(self.main_menu_text[1], (screen_width / 2 - 200, screen_height / 2 - 150))
-                self.screen.blit(self.main_menu_text[2], (screen_width / 2 - 200, screen_height / 2 + 150))
-
-            elif self.current_state == "CREATE CARD DIALOG":
-                if self.img_filename:
-                    screen_info = pygame.display.Info()
-                    screen_width = screen_info.current_w
-                    screen_height = screen_info.current_h
-
-                    self.screen.blit(self.txt, (screen_width / 2 + 200, screen_height / 2 - 220))
-
-            self.handle_events()
-
-            pygame.display.flip()
-            self.clock.tick(60)
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -263,7 +284,7 @@ class ClientView:
             self.txt = self.super_small_font.render(f"Selected: {filename}", True, (255, 255, 255))
 
     def call_submit_card(self, update_screen):
-        print("Submitting...")
+        print("Submitting card...")
 
         try:
             for i in range(1, len(self.textboxes)):
@@ -280,3 +301,19 @@ class ClientView:
         # @TODO: Colocar no banco de dados
         update_screen("CLIENT MAIN SCREEN")
 
+    def submit_new_user(self, update_screen):
+        print("Submitting user...")
+        try:
+            for i in range(1, len(self.textboxes)):
+                self.submission[list(self.submission.keys())[i]] = str(self.textboxes[i].get_text())
+        except ValueError:
+            print("Invalid name. Please try again.") # @TODO: Implementar notificação de erro
+            update_screen("CREATE USER DIALOG")
+            return
+        self.username = self.textboxes[0].get_text()
+
+        print("Submission complete! Please check:\n", self.username)  # @TODO: Implementar notificação de erro
+
+        # @TODO: Colocar no banco de dados
+
+        update_screen("MAIN MENU")

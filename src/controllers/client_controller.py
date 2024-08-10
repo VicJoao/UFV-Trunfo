@@ -55,8 +55,8 @@ class ClientController:
         elif self.get_current_state() == "REMOVE CARD FROM DECK":
             self.view.remove_card_from_deck()
 
-        elif self.get_current_state() == "CREATE USER DIALOG":
-            self.view.create_new_user()
+        elif self.get_current_state() == "CREATE USER":
+            self.view.create_new_user(self.update_screen)
 
 
         self.view.draw_widgets()

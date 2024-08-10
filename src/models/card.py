@@ -27,8 +27,8 @@ class Card(pygame.sprite.Sprite):
     def set_card_pos(self, pos):
         self.rect.center = pos
     def gen_card_img(self, selfie):
-        card_image = Image.open("src/assets/teste.png")
-        name_tag = Image.open("src/assets/name_tag.png")
+        card_image = Image.open("assets/teste.png")
+        name_tag = Image.open("assets/name_tag.png")
 
         card_arr = np.asarray(card_image)
         card_arr = card_arr.copy()
@@ -218,7 +218,7 @@ class Card(pygame.sprite.Sprite):
         draw = ImageDraw.Draw(image)
 
         # Carregar a fonte personalizada
-        font = ImageFont.truetype("src/assets/fonts/introrust-base.otf", font_size)
+        font = ImageFont.truetype("assets/fonts/introrust-base.otf", font_size)
 
         # Calcular a largura e a altura do texto
         bbox = draw.textbbox((0, 0), text, font=font)

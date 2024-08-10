@@ -64,7 +64,7 @@ class ClientController:
     def update_screen(self, state, username=None):
         if username:
             print(f"Username: {username}")
-            # self.user = self.model.get_user_by_name(username)
+            self.user = self.model.get_user_by_name(username)
         print("Calling...")
         self.view.change_state(state)
         self.load_state()

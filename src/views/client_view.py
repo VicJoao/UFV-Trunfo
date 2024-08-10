@@ -102,7 +102,7 @@ class ClientView:
         for i, name in users: # @FIXME: Se forem muitos usuários, a tela vai ficar bugada
             width = screen_width / 2
             height = screen_height / 2 - 300 + i * 60
-            # banana = lambda : update_screen("CLIENT MAIN SCREEN", username=name)
+
             print(name)
             self.create_button(name, width, height, 300, 50,
                                update_screen, "CLIENT MAIN SCREEN")
@@ -168,8 +168,8 @@ class ClientView:
         screen_info = pygame.display.Info()
         screen_width = screen_info.current_w
         screen_height = screen_info.current_h
-        print(user.get_name())
-        print(user.get_cards())
+
+        print(user.get_user_cards())
 
 
 

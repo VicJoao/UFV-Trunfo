@@ -71,8 +71,8 @@ class ServerScanner:
         self.connect_button.pack(pady=5)
         self.connect_button.config(state=tk.DISABLED)
 
-        #self.players_label = tk.Label(self.frame, text="Jogadores conectados:")
-        #self.players_label.pack(pady=5)
+        # self.players_label = tk.Label(self.frame, text="Jogadores conectados:")
+        # self.players_label.pack(pady=5)
 
         self.players_listbox = tk.Listbox(self.frame, width=50, height=10)
         self.players_listbox.pack()
@@ -184,7 +184,6 @@ class ServerScanner:
 
             print(f"Minha porta de escuta é {port}")
 
-
             while True:
                 try:
                     data, addr = s.recvfrom(4096)
@@ -208,24 +207,29 @@ class ServerScanner:
                         if winner != -1:
                             print(f"Vencedor: {winner}!")
                             if self.game.my_id == winner:
-                               print("Você ganhou, selecione uma carta: ")
-                               self.win_card()
+                                print("Você ganhou, selecione uma carta: ")
+                                self.win_card()
                             elif winner == -2:
                                 print(f"Empate, ninguém ganha nada!")
+
+                                try:
+                                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                                        s.connect((self.host, COMM_PORT))
+                                        s.sendall(
+                                            Message(Message.WINNER, {}).to_bytes())
+                                except Exception as e:
+                                    messagebox.showerror("Erro",
+                                                         f"Erro ao enviar dados para o servidor {self.host}: {e}")
+
+                                return
                             else:
                                 print("Infelizmente você perdeu!")
-                            print("Aguardando server encerrar partida...")
-                            message = Message(Message.WINNER, {'winner': winner})
-                            s.sendto(message.to_bytes(), (self.host, COMM_PORT))
-
                         else:
                             self.render_game_screen()
 
 
                     elif message.message_type == Message.WINNER:
-                        # Disconnect from server
-                        print("Fim de jogo, vencedor: ", message.data['winner'])
-                        sys.exit(0)
+                        os._exit(0)
 
                     else:
                         print("MENSAGEM NAO CONHECIDA")
@@ -244,13 +248,25 @@ class ServerScanner:
             print(f"------> CARTA {index}")
             card.print_card()
         option = int(input("DIGITE O NUMERO DA CARTA DESEJADO:"))
-        #Conecta ao BD e adiciona a carta a colecao do jogador
+        # Conecta ao BD e adiciona a carta a colecao do jogador
         selected_card = self.game.board.pile[option]
         client_db = os.getenv("CLIENT_DB")
         banco_de_dados_cliente = ClientModel(client_db)
-        banco_de_dados_cliente.create_card(selected_card.name, selected_card.intelligence, selected_card.charisma, selected_card.sport, selected_card.humor, selected_card.creativity, selected_card.appearance, self.bd_id)
+        banco_de_dados_cliente.create_card(selected_card.name, selected_card.intelligence, selected_card.charisma,
+                                                selected_card.sport, selected_card.humor, selected_card.creativity,
+                                                selected_card.appearance, self.bd_id)
+
+
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((self.host, COMM_PORT))
+                s.sendall(
+                    Message(Message.WINNER, {}).to_bytes())
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {self.host}: {e}")
 
         return
+
     def process_new_player_message(self, message):
 
         print(f"Novo jogador entrou, bem vindo, {message.data['Nome']}")

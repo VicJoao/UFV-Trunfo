@@ -1,9 +1,9 @@
 import random
 import socket
-import sys
 import threading
 from server2.game_data import GameData
 from server2.message import Message
+import os
 
 # Define as portas e variáveis globais
 MAX_CLIENTS = 3
@@ -164,21 +164,14 @@ class Server:
                                 continue
 
                         elif message.message_type == Message.WINNER:
-                            print("O jogo acabou!")
-                            winner = message.data['winner']
-                            print("O vencedor é: ", winner)
-                            response = Message(Message.WINNER, "Winner")
-                            conn.sendall(response.to_bytes())
+                            for client_ip, client_ports in self.porta_enviar_cliente.items():
+                                message_winner = Message(Message.WINNER, {})
+                                for client_port in client_ports:
+                                    send_message(client_ip, client_port, message_winner)
 
-                            # Espera as threads terminarem
-                            for t in threading.enumerate():
-                                if t is not threading.current_thread():
-                                    t.join()
-                            # Encerra a conexão
-                            conn.close()
-                            # Encerra o socket do servidor se necessário
-                            self.server_socket.close()
-                            sys.exit(0)
+                            os._exit(0)
+
+
 
                         elif message.message_type == Message.DISCONNECT:
                             response = Message(Message.DISCONNECT, "Disconnect")

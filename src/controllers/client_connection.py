@@ -183,7 +183,7 @@ class ServerScanner:
             s.bind(('0.0.0.0', port))  # Bind na porta de comunicação
 
             print(f"Minha porta de escuta é {port}")
-            print(self.servers)
+
 
             while True:
                 try:

@@ -205,23 +205,19 @@ class ServerScanner:
                         print("Jogadas recebidas dos 3 jogadores, turno começando...")
                         winner = self.game.play_turn(message.data['plays'], message.data['atribute'])
                         if winner != -1:
-                            print(f"Vencedor: {winner}!")
+
+                            if winner == -2:
+                                pass
+                            else:
+                                print("Vencedor: ",winner)
                             if self.game.my_id == winner:
                                 print("Você ganhou, selecione uma carta: ")
                                 self.win_card()
+                                self.encerrar_partida()
                             elif winner == -2:
                                 print(f"Empate, ninguém ganha nada!")
+                                self.encerrar_partida()
 
-                                try:
-                                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                                        s.connect((self.host, COMM_PORT))
-                                        s.sendall(
-                                            Message(Message.WINNER, {}).to_bytes())
-                                except Exception as e:
-                                    messagebox.showerror("Erro",
-                                                         f"Erro ao enviar dados para o servidor {self.host}: {e}")
-
-                                return
                             else:
                                 print("Infelizmente você perdeu!")
                         else:
@@ -256,17 +252,17 @@ class ServerScanner:
                                                 selected_card.sport, selected_card.humor, selected_card.creativity,
                                                 selected_card.appearance, self.bd_id)
 
-
+    def encerrar_partida(self):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((self.host, COMM_PORT))
                 s.sendall(
                     Message(Message.WINNER, {}).to_bytes())
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {self.host}: {e}")
+            messagebox.showerror("Erro",
+                                 f"Erro ao enviar dados para o servidor {self.host}: {e}")
 
         return
-
     def process_new_player_message(self, message):
 
         print(f"Novo jogador entrou, bem vindo, {message.data['Nome']}")

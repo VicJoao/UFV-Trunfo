@@ -109,6 +109,7 @@ class ClientController:
         self.user = self.client_model.get_user_by_name(user[1])
         messagebox.showinfo("Info", f"User {self.user.get_name()} loaded")
         self.server_scanner.set_user_info(self.user.get_name(), self.user.get_deck())
+        self.server_scanner.atribute_user_id(self.user.get_id())
         self.user_menu_frame.pack_forget()
         self.menu_frame.pack()
 

@@ -1,5 +1,6 @@
 import random
 import socket
+import sys
 import threading
 from server2.game_data import GameData
 from server2.message import Message
@@ -160,9 +161,22 @@ class Server:
                             else:
                                 continue
 
-                        elif message.message_type == Message.ENCERRAR:
+                        elif message.message_type == Message.WINNER:
                             print("O jogo acabou!")
-                            break
+                            winner = message.data['winner']
+                            print("O vencedor é: ", winner)
+                            response = Message(Message.WINNER, "Winner")
+                            conn.sendall(response.to_bytes())
+
+                            # Espera as threads terminarem
+                            for t in threading.enumerate():
+                                if t is not threading.current_thread():
+                                    t.join()
+                            # Encerra a conexão
+                            conn.close()
+                            # Encerra o socket do servidor se necessário
+                            self.server_socket.close()
+                            sys.exit(0)
 
                         elif message.message_type == Message.DISCONNECT:
                             response = Message(Message.DISCONNECT, "Disconnect")

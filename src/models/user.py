@@ -49,3 +49,6 @@ class User:
 
     def set_deck(self, deck):
         self.deck = deck
+
+    def get_id(self):
+        return self.id

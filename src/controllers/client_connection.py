@@ -1,12 +1,14 @@
 import copy
 import socket
+import sys
 import threading
 import tkinter as tk
 from tkinter import messagebox
+import os
 
+from models.client_model import ClientModel
 from server2.game import Game
 from server2.message import Message
-from server2.board import Board
 
 # Defina as portas globalmente
 DISCOVERY_PORT = 4242
@@ -37,6 +39,7 @@ def get_local_ips():
 
 class ServerScanner:
     def __init__(self, root):
+        self.bd_id = None
         self.board = None
         self.scan_thread = None
         self.root = root
@@ -78,6 +81,9 @@ class ServerScanner:
         self.disconnect_button = tk.Button(self.frame, text="Desconectar", command=self.disconnect_from_server)
         self.disconnect_button.pack(pady=5)
         self.disconnect_button.config(state=tk.DISABLED)
+
+    def atribute_user_id(self, user_id):
+        self.bd_id = user_id
 
     def get_random_free_port(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -198,23 +204,28 @@ class ServerScanner:
                     elif message.message_type == Message.PLAY:
                         print("Jogadas recebidas dos 3 jogadores, turno começando...")
                         winner = self.game.play_turn(message.data['plays'], message.data['atribute'])
-                        if winner != -1 and winner != -2:
+                        if winner != -1:
                             print(f"Vencedor: {winner}!")
                             if self.game.my_id == winner:
                                print("Você ganhou, selecione uma carta: ")
-                               # Implementar aqui
+                               self.win_card()
+                            elif winner == -2:
+                                print(f"Empate, ninguém ganha nada!")
                             else:
                                 print("Infelizmente você perdeu!")
                             print("Aguardando server encerrar partida...")
+                            message = Message(Message.WINNER, {'winner': winner})
+                            s.sendto(message.to_bytes(), (self.host, COMM_PORT))
 
-
-                        elif winner == -2:
-                            print(f"Empate, ninguém ganha nada!")
                         else:
                             self.render_game_screen()
 
-                    elif message.message_type == Message.DISCONNECT:
-                        print(message.data)
+
+                    elif message.message_type == Message.WINNER:
+                        # Disconnect from server
+                        print("Fim de jogo, vencedor: ", message.data['winner'])
+                        sys.exit(0)
+
                     else:
                         print("MENSAGEM NAO CONHECIDA")
 
@@ -226,6 +237,19 @@ class ServerScanner:
                     print(f"Erro inesperado: {e}")
                     break
 
+    def win_card(self):
+        print("--------ESCOLHA UMA CARTA PARA GANHAR--------")
+        for index, card in enumerate(self.game.board.pile):
+            print(f"------> CARTA {index}")
+            card.print_card()
+        option = int(input("DIGITE O NUMERO DA CARTA DESEJADO:"))
+        #Conecta ao BD e adiciona a carta a colecao do jogador
+        selected_card = self.game.board.pile[option]
+        client_db = os.getenv("CLIENT_DB")
+        banco_de_dados_cliente = ClientModel(client_db)
+        banco_de_dados_cliente.create_card(selected_card.name, selected_card.intelligence, selected_card.charisma, selected_card.sport, selected_card.humor, selected_card.creativity, selected_card.appearance, self.bd_id)
+
+        return
     def process_new_player_message(self, message):
 
         print(f"Novo jogador entrou, bem vindo, {message.data['Nome']}")
@@ -310,7 +334,7 @@ class ServerScanner:
     def render_game_screen(self):
         # Acessa a lista de cartas usando a chave 'hand'
         my_hand = self.game.players_hands[self.game.my_id]['hand']
-        
+
         # Exibe as cartas e seus índices originais
         for index, card in self.original_indices:
             # Verifica se a carta original está na mão do jogador
@@ -338,6 +362,13 @@ class ServerScanner:
     def render_round_winner(self):
         # render round winner on screen for 3 seconds and all 3 played cards
         pass
+
+    def stop_all_threads(self):
+        # Implementar a lógica para parar todas as threads
+        self.is_scanning = False  # Parar a varredura se estiver em andamento
+        if self.scan_thread:
+            self.scan_thread.join()  # Aguardar a thread de escaneamento parar
+        # Adicione lógica adicional aqui para parar outras threads, se necessário
 
 
 if __name__ == "__main__":

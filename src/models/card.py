@@ -1,4 +1,3 @@
-
 class Card:
     def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance):
         self.id = id
@@ -10,7 +9,7 @@ class Card:
         self.creativity = self._validate_stat(creativity, "creativity")
         self.appearance = self._validate_stat(appearance, "appearance")
 
-    def _validate_stat(self, value, stat_name)  :
+    def _validate_stat(self, value, stat_name):
         if not isinstance(value, (int, float)):
             raise TypeError(f"{stat_name.capitalize()} must be a number.")
         if value < 0:
@@ -18,8 +17,21 @@ class Card:
         return value
 
     def __repr__(self):
-        return (f"Card({self.id},{self.name}, {self.intelligence}, {self.charisma}, "
-                f"{self.sport}, {self.humor}, {self.creativity}, {self.appearance})")
+        return (f"Card(id={self.id}, name='{self.name}', intelligence={self.intelligence}, "
+                f"charisma={self.charisma}, sport={self.sport}, humor={self.humor}, "
+                f"creativity={self.creativity}, appearance={self.appearance})")
+
+    def __eq__(self, other):
+        if not isinstance(other, Card):
+            return False
+        return (self.id == other.id and
+                self.name == other.name and
+                self.intelligence == other.intelligence and
+                self.charisma == other.charisma and
+                self.sport == other.sport and
+                self.humor == other.humor and
+                self.creativity == other.creativity and
+                self.appearance == other.appearance)
 
     def print_card(self):
         print(f"Card ID: {self.id}")

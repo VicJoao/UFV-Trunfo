@@ -1,12 +1,14 @@
 import random
 
+NUMERO_CARTAS = 5
+
 
 def get_random_cards(cards):
-    if 3 > len(cards):
+    if NUMERO_CARTAS > len(cards):
         raise ValueError("Número de cartas solicitadas é maior do que o número de cartas no deck.")
 
     # Seleciona `num_cards` cartas aleatórias do deck
-    random_cards = random.sample(cards, 3)
+    random_cards = random.sample(cards, NUMERO_CARTAS)
     return random_cards
 
 

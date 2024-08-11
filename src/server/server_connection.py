@@ -16,6 +16,7 @@ def send_message(ip, server_client_port, mensagem_a_ser_enviada):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as enviar:
         enviar.sendto(mensagem_a_ser_enviada.to_bytes(), (ip, server_client_port))
 
+
 def select_random_attribute():
     attributes = ["intelligence", "charisma", "sport", "humor", "creativity", "appearance"]
     return random.choice(attributes)
@@ -44,6 +45,7 @@ class Server:
             threading.Thread(target=self.handle_discovery, daemon=True).start()
             for port in range(COMM_PORT_START, COMM_PORT_END + 1):
                 threading.Thread(target=self.comunicar_com_clientes, args=(port,), daemon=True).start()
+                print("Servidor iniciado, Aguardando conexões na porta:", port)
             input("Pressione Enter para encerrar o servidor...")
         finally:
             self.server_socket.close()
@@ -87,7 +89,6 @@ class Server:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(('0.0.0.0', port))
             s.listen(MAX_CLIENTS_PER_PORT)
-            print(f"Servidor de comunicação iniciado na porta {port}")
 
             # Função para enviar mensagem aos clientes
 
@@ -100,19 +101,17 @@ class Server:
                     try:
                         message = Message.from_bytes(conn.recv(1024))
 
-                        # Recebe os dados do cliente, como nome e deck e porta, salva, além disso, verifica se já pode começar
-                        # uma partida
+                        # Recebe os dados do cliente, como nome e deck e porta, salva, além disso, verifica se já
+                        # pode começar uma partida
                         if message.message_type == Message.PLAYER_DATA:
                             print("DADOS DO JOGADOR RECEBIDOS, JOGADOR : ", {message.data['player_name']},
                                   {message.data['deck']})
 
-                            print(message.data['player_name'])
                             response = Message(Message.PLAYER_DATA, "Player data received")
                             conn.sendall(response.to_bytes())
 
                             # Salva o dado dos jogadores conectados
                             self.players_data.append(message.data)
-
 
                             # Se o IP já existe no dicionário, adiciona a nova porta à lista
                             if client_ip in self.porta_enviar_cliente:
@@ -135,22 +134,16 @@ class Server:
 
                             # Verifica se o número de jogadores é 3
                             if len(self.players_data) == 3:
-
-
-
-                                print(self.porta_enviar_cliente)
                                 self.start_game(self.porta_enviar_cliente)
 
                         elif message.message_type == Message.PLAY:
                             self.jogadas_no_turno += 1
+                            # Recebendo dados
                             opcao = message.data["opcao"]
                             player_id = message.data["player_id"]
 
                             # Adicionando uma lista contendo id e opcao à lista plays
                             self.plays.append([player_id, opcao])
-
-                            print(self.plays)
-
 
                             if self.jogadas_no_turno == 3:
 
@@ -161,12 +154,16 @@ class Server:
                                                       {"plays": self.plays, "atribute": select_random_attribute()})
                                     for client_port in client_ports:
                                         send_message(client_ip, client_port, message)
+
+                                    self.plays = []
+                                    self.jogadas_no_turno = 0
                             else:
                                 continue
 
+                        elif message.message_type == Message.ENCERRAR:
+                            print("O jogo acabou!")
+                            break
 
-
-                        # Desconecta um cliente e envia para todos os outros
                         elif message.message_type == Message.DISCONNECT:
                             response = Message(Message.DISCONNECT, "Disconnect")
                             conn.sendall(response.to_bytes())
@@ -179,15 +176,12 @@ class Server:
                                 for client_port in client_ports:
                                     send_message(client_ip, client_port, message_disconnect)
 
-
                         else:
                             response = Message(Message.TYPO_ERROR, "Unknown message type " + str(message.message_type))
                             conn.sendall(response.to_bytes())
                             print(f"Erro de mensagem com {addr}, conexão recusada, com erro {response.data}")
                     except Exception as e:
                         print(f"Erro ao processar mensagem de {addr}: {e}")
-
-
 
     def get_available_port(self):
         with self.lock:

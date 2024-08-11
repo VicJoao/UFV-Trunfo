@@ -1,11 +1,12 @@
+import copy
 import socket
 import threading
 import tkinter as tk
 from tkinter import messagebox
-import copy
 
 from server2.game import Game
 from server2.message import Message
+from server2.board import Board
 
 # Defina as portas globalmente
 DISCOVERY_PORT = 4242
@@ -36,6 +37,7 @@ def get_local_ips():
 
 class ServerScanner:
     def __init__(self, root):
+        self.board = None
         self.scan_thread = None
         self.root = root
         self.is_scanning = False
@@ -48,7 +50,6 @@ class ServerScanner:
         self.players_list = []
         self.porta_de_escuta = None
         self.original_indices = []
-
         # Tkinter
         self.frame = tk.Frame(root)
         self.frame.pack(padx=10, pady=10)
@@ -67,8 +68,8 @@ class ServerScanner:
         self.connect_button.pack(pady=5)
         self.connect_button.config(state=tk.DISABLED)
 
-        self.players_label = tk.Label(self.frame, text="Jogadores conectados:")
-        self.players_label.pack(pady=5)
+        #self.players_label = tk.Label(self.frame, text="Jogadores conectados:")
+        #self.players_label.pack(pady=5)
 
         self.players_listbox = tk.Listbox(self.frame, width=50, height=10)
         self.players_listbox.pack()
@@ -82,7 +83,6 @@ class ServerScanner:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind(('', 0))
             self.porta_de_escuta = s.getsockname()[1]
-            print(self.porta_de_escuta)
         return self.porta_de_escuta
 
     def show_game(self):
@@ -144,7 +144,7 @@ class ServerScanner:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
                 s.settimeout(1)
                 s.sendto(Message(Message.HANDSHAKE, {}).to_bytes(), (host, port))
-                data, addr = s.recvfrom(1024)
+                data, addr = s.recvfrom(4096)
                 message = Message.from_bytes(data)
                 if message.message_type == Message.HANDSHAKE:
                     server_name = message.data
@@ -176,11 +176,11 @@ class ServerScanner:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
             s.bind(('0.0.0.0', port))  # Bind na porta de comunicação
 
-            print(f"Minha porta é {port}")
+            print(f"Minha porta de escuta é {port}")
 
             while True:
                 try:
-                    data, addr = s.recvfrom(1024)
+                    data, addr = s.recvfrom(4096)
                     message = Message.from_bytes(data)
 
                     if message.message_type == Message.NEW_PLAYER:
@@ -191,20 +191,27 @@ class ServerScanner:
                         player_id = message.data['player_id']
 
                         self.game = Game(players_data, player_id)
-                        self.original_indices = self.game.players_hands[self.game.my_id]['hand']
+                        self.original_indices = [(index, card) for index, card in enumerate(
+                            copy.deepcopy(self.game.players_hands[self.game.my_id]['hand']))]
                         self.render_game_screen()
 
                     elif message.message_type == Message.PLAY:
-                        print("Jogadas recebidas!")
+                        print("Jogadas recebidas dos 3 jogadores, turno começando...")
                         winner = self.game.play_turn(message.data['plays'], message.data['atribute'])
-                        if winner != -1:
+                        if winner != -1 and winner != -2:
                             print(f"Vencedor: {winner}!")
-                            #send WINNER message to server
-                            s.sendto(Message(Message.WINNER, {'winner': winner}).to_bytes(), (self.host, COMM_PORT))
-                            break
+                            if self.game.my_id == winner:
+                               print("Você ganhou, selecione uma carta: ")
+                               # Implementar aqui
+                            else:
+                                print("Infelizmente você perdeu!")
+                            print("Aguardando server encerrar partida...")
+
+
+                        elif winner == -2:
+                            print(f"Empate, ninguém ganha nada!")
                         else:
                             self.render_game_screen()
-
 
                     elif message.message_type == Message.DISCONNECT:
                         print(message.data)
@@ -220,6 +227,7 @@ class ServerScanner:
                     break
 
     def process_new_player_message(self, message):
+
         print(f"Novo jogador entrou, bem vindo, {message.data['Nome']}")
         print(f"Jogadores conectados aguardando partida: {message.data['Jogadores']}")
         self.players_list = message.data['Jogadores']
@@ -252,7 +260,7 @@ class ServerScanner:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as s:
                 s.settimeout(1)
                 s.sendto(Message(Message.CONNECT, {}).to_bytes(), (host, DISCOVERY_PORT))
-                data, addr = s.recvfrom(1024)
+                data, addr = s.recvfrom(4096)
                 message = Message.from_bytes(data)
                 if message.message_type == Message.CONNECT:
                     global COMM_PORT
@@ -279,10 +287,9 @@ class ServerScanner:
                 s.sendall(
                     Message(Message.PLAYER_DATA, {'player_name': self.nome_jogador, 'deck': self.deck,
                                                   'player_port': self.porta_de_escuta}).to_bytes())
-                data = s.recv(1024)
+                data = s.recv(4096)
                 message = Message.from_bytes(data)
                 if message.message_type == Message.PLAYER_DATA:
-                    print(f"Data recebida do servidor {host}: {message.data}")
                     self.show_game()
                 else:
                     messagebox.showerror("Erro", f"Resposta inesperada do servidor {host}: {message.data}")
@@ -303,17 +310,22 @@ class ServerScanner:
     def render_game_screen(self):
         # Acessa a lista de cartas usando a chave 'hand'
         my_hand = self.game.players_hands[self.game.my_id]['hand']
-
+        
         # Exibe as cartas e seus índices originais
-        for card in my_hand:
-            print(f" --- OPCAO: {self.original_indices.index(card)}")
-            card.print_card()  # Chama o método para imprimir informações detalhadas da carta
-
-        option = int(input("DIGITE:"))
+        for index, card in self.original_indices:
+            # Verifica se a carta original está na mão do jogador
+            if card in my_hand:
+                print("_____________________________")
+                print(f"------> SELECIONE: {index}")
+                card.print_card()  # Chama o método para imprimir informações detalhadas da carta
+        option = int(input("DIGITE A OPÇÃO DESEJADA:"))
 
         self.send_play(option, self.game.my_id)
 
     def send_play(self, option, id):
+        print("____________________________")
+        print("O MEU ID É: ", id)
+        print("____________________________")
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((self.host, COMM_PORT))
@@ -324,8 +336,9 @@ class ServerScanner:
             messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {self.host}: {e}")
 
     def render_round_winner(self):
-        #render round winner on screen for 3 seconds and all 3 played cards
+        # render round winner on screen for 3 seconds and all 3 played cards
         pass
+
 
 if __name__ == "__main__":
     root = tk.Tk()

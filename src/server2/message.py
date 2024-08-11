@@ -1,6 +1,8 @@
 import pickle
 
 class Message:
+    ENCERRAR = 99
+    WINNER_SELECT_CARD = 40
     ANOTHER_TYPE = 20
     START_GAME = 15
     LISTEN_PORT = 8

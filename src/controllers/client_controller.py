@@ -48,13 +48,13 @@ class ClientController:
             self.view.create_match_dialog()
 
         elif self.get_current_state() == "ADD CARD TO DECK":
-            self.view.add_card_to_deck(self.user, self.update_screen, self.get_not_in_deck_cards)
+            self.view.add_card_to_deck(self.user, self.update_screen, self.get_not_in_deck_cards, self.add_card_to_deck)
 
         elif self.get_current_state() == "DISPLAY USER DECK":
             self.view.display_user_deck(self.user, self.update_screen)
 
         elif self.get_current_state() == "REMOVE CARD FROM DECK":
-            self.view.remove_card_from_deck()
+            self.view.remove_card_from_deck(self.user, self.update_screen, self.remove_card_from_deck)
 
         elif self.get_current_state() == "CREATE USER":
             self.view.create_new_user(self.update_screen, self.set_new_user)
@@ -88,6 +88,12 @@ class ClientController:
 
     def get_card_from_tuple(self, card_tuple):
         return self.model.get_card_by_id(card_tuple[0])
+
+    def add_card_to_deck(self, user, card):
+        self.model.add_card_to_deck(user.get_id(), card.get_id())
+
+    def remove_card_from_deck(self, user, card):
+        self.model.remove_card_from_deck(user.get_id(), card.get_id())
 
 
     def run(self):

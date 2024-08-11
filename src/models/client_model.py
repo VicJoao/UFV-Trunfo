@@ -341,7 +341,7 @@ class ClientModel:
         finally:
             conn.close()
 
-    def get_not_in_deck_cards(self, user_id):
+    def get_not_in_deck_cards(self, user_id): # @TODO: Verificar se a query está correta
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()

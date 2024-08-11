@@ -1,10 +1,11 @@
-import time
+import socket
+import threading
 import tkinter as tk
 from tkinter import messagebox
-import threading
-import socket
-from server2.message import Message
+import copy
+
 from server2.game import Game
+from server2.message import Message
 
 # Defina as portas globalmente
 DISCOVERY_PORT = 4242
@@ -46,6 +47,7 @@ class ServerScanner:
         self.host = None
         self.players_list = []
         self.porta_de_escuta = None
+        self.original_indices = []
 
         # Tkinter
         self.frame = tk.Frame(root)
@@ -184,16 +186,26 @@ class ServerScanner:
                     if message.message_type == Message.NEW_PLAYER:
                         self.process_new_player_message(message)
                     elif message.message_type == Message.START_GAME:
-                        self.game = Game(message.data['game_data'], message.data['player_id'])
-                        self.reder_game_screen()
-                        print("Jogo iniciado!")
+                        players_data = message.data['players_data']  # Certifique-se de que isso é um dicionário ou
+                        # lista de dicionários
+                        player_id = message.data['player_id']
+
+                        self.game = Game(players_data, player_id)
+                        self.original_indices = self.game.players_hands[self.game.my_id]['hand']
+                        self.render_game_screen()
+
                     elif message.message_type == Message.PLAY:
                         print("Jogadas recebidas!")
-                        winner = self.game.play_turn(message.data['plays'])
+                        winner = self.game.play_turn(message.data['plays'], message.data['atribute'])
                         if winner != -1:
                             print(f"Vencedor: {winner}!")
                             #send WINNER message to server
                             s.sendto(Message(Message.WINNER, {'winner': winner}).to_bytes(), (self.host, COMM_PORT))
+                            break
+                        else:
+                            self.render_game_screen()
+
+
                     elif message.message_type == Message.DISCONNECT:
                         print(message.data)
                     else:
@@ -288,9 +300,28 @@ class ServerScanner:
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao desconectar do servidor: {e}")
 
-    def reder_game_screen(self):
-        #render game screen with 3 cards and 3 buttons
-        pass
+    def render_game_screen(self):
+        # Acessa a lista de cartas usando a chave 'hand'
+        my_hand = self.game.players_hands[self.game.my_id]['hand']
+
+        # Exibe as cartas e seus índices originais
+        for card in my_hand:
+            print(f" --- OPCAO: {self.original_indices.index(card)}")
+            card.print_card()  # Chama o método para imprimir informações detalhadas da carta
+
+        option = int(input("DIGITE:"))
+
+        self.send_play(option, self.game.my_id)
+
+    def send_play(self, option, id):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((self.host, COMM_PORT))
+                s.sendall(
+                    Message(Message.PLAY, {'opcao': option, 'player_id': id}).to_bytes())
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {self.host}: {e}")
 
     def render_round_winner(self):
         #render round winner on screen for 3 seconds and all 3 played cards

@@ -1,3 +1,4 @@
+import random
 import socket
 import threading
 from server2.game_data import GameData
@@ -15,6 +16,10 @@ def send_message(ip, server_client_port, mensagem_a_ser_enviada):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as enviar:
         enviar.sendto(mensagem_a_ser_enviada.to_bytes(), (ip, server_client_port))
 
+def select_random_attribute():
+    attributes = ["intelligence", "charisma", "sport", "humor", "creativity", "appearance"]
+    return random.choice(attributes)
+
 
 class Server:
     def __init__(self):
@@ -27,6 +32,8 @@ class Server:
         self.server_socket.bind(('0.0.0.0', DISCOVERY_PORT))
         self.server_name = "Server UFV"
         self.num_players = 0
+        self.jogadas_no_turno = 0
+        self.plays = []
         self.players_name = []  # Lista com os nomes dos jogadores
         self.players_data = []  # Lista de dados dos jogadores
         print(f"Servidor de descoberta iniciado na porta {DISCOVERY_PORT}")
@@ -128,9 +135,34 @@ class Server:
 
                             # Verifica se o número de jogadores é 3
                             if len(self.players_data) == 3:
+
+
+
                                 print(self.porta_enviar_cliente)
                                 self.start_game(self.porta_enviar_cliente)
 
+                        elif message.message_type == Message.PLAY:
+                            self.jogadas_no_turno += 1
+                            opcao = message.data["opcao"]
+                            player_id = message.data["player_id"]
+
+                            # Adicionando uma lista contendo id e opcao à lista plays
+                            self.plays.append([player_id, opcao])
+
+                            print(self.plays)
+
+
+                            if self.jogadas_no_turno == 3:
+
+                                # Envia a mensagem para todos os clientes que um novo jogador entrou
+                                for client_ip, client_ports in self.porta_enviar_cliente.items():
+                                    # Cria a mensagem com o nome do novo jogador e a lista de jogadores conectados
+                                    message = Message(Message.PLAY,
+                                                      {"plays": self.plays, "atribute": select_random_attribute()})
+                                    for client_port in client_ports:
+                                        send_message(client_ip, client_port, message)
+                            else:
+                                continue
 
 
 
@@ -154,6 +186,8 @@ class Server:
                             print(f"Erro de mensagem com {addr}, conexão recusada, com erro {response.data}")
                     except Exception as e:
                         print(f"Erro ao processar mensagem de {addr}: {e}")
+
+
 
     def get_available_port(self):
         with self.lock:

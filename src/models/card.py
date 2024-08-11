@@ -21,6 +21,16 @@ class Card:
         return (f"Card({self.id},{self.name}, {self.intelligence}, {self.charisma}, "
                 f"{self.sport}, {self.humor}, {self.creativity}, {self.appearance})")
 
+    def print_card(self):
+        print(f"Card ID: {self.id}")
+        print(f"Name: {self.name}")
+        print(f"Intelligence: {self.intelligence}")
+        print(f"Charisma: {self.charisma}")
+        print(f"Sport: {self.sport}")
+        print(f"Humor: {self.humor}")
+        print(f"Creativity: {self.creativity}")
+        print(f"Appearance: {self.appearance}")
+
     def get_name(self):
         return self.name
 

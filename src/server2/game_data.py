@@ -1,12 +1,22 @@
 import random
 
+
+def get_random_cards(cards):
+    if 3 > len(cards):
+        raise ValueError("Número de cartas solicitadas é maior do que o número de cartas no deck.")
+
+    # Seleciona `num_cards` cartas aleatórias do deck
+    random_cards = random.sample(cards, 3)
+    return random_cards
+
+
 class GameData:
     class PlayerData:
         def __init__(self, name, player_id, deck, address):
             self.name = name
-            self.hand = deck
             self.id = player_id
             self.address = address  # Endereço/porta associado ao jogador
+            self.hand = get_random_cards(deck.get_cards())  # Inicializa a mão com cartas aleatórias
 
     def __init__(self):
         self.players_data = []

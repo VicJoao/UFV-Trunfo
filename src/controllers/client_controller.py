@@ -2,7 +2,6 @@ import sys
 from models.client_model import ClientModel
 from views.client_view import ClientView
 from models.user import User
-from controllers.conection import Connection
 import pygame
 
 class ClientController:
@@ -10,7 +9,6 @@ class ClientController:
         self.model = model
         self.view = view
         self.user = User()
-        self.connection = Connection()
 
     def main_menu(self):
         self.view.change_state("MAIN MENU")

@@ -4,8 +4,9 @@ import tkinter as tk
 from tkinter.filedialog import askopenfilename
 import pygame
 import os
-from views.textbox_view import TextBox
+from views.textbox import TextBox
 from views.button import Button
+from views.card_selector import CardSelector
 from models.card import Card
 import sys
 from PIL import Image
@@ -44,7 +45,9 @@ class ClientView:
 
         self.buttons = []
         self.textboxes = []
+        self.card_selectors = []
         self.main_menu_text = []
+
 
 
     def draw_widgets(self):
@@ -55,6 +58,9 @@ class ClientView:
 
             for textbox in self.textboxes:
                 textbox.draw(self.screen)
+
+            for card_selector in self.card_selectors:
+                card_selector.draw(self.screen)
 
             if self.current_state == "DISPLAY USER CARDS" or self.current_state == "DISPLAY USER DECK":
                 # self.draw_cards(self.all_cards)
@@ -90,6 +96,13 @@ class ClientView:
 
                 self.screen.blit(self.main_menu_text[2], screen_width / 2, screen_height / 2 - 100)
 
+            elif self.current_state == "ADD CARD TO DECK":
+                screen_info = pygame.display.Info()
+                screen_width = screen_info.current_w
+                screen_height = screen_info.current_h
+
+                self.screen.blit(self.txt, (screen_width / 2 - 200, screen_height / 2 - 350)) # @FIXME: Centralizar texto
+
             self.handle_events()
 
             pygame.display.flip()
@@ -103,10 +116,17 @@ class ClientView:
         textbox = TextBox(int(x), int(y), int(width), int(height), font, placeholder=placeholder, limit=limit)
         self.textboxes.append(textbox)
 
+    def create_card_selector(self, pos, size, image):
+        x, y = pos
+        width, height = size
+        card_selector = CardSelector(x, y, width, height, image)
+        self.card_selectors.append(card_selector)
+
     def change_state(self, state):
         print(f"[!] Changing State: {self.current_state} -> {state}")
         self.buttons.clear()
         self.textboxes.clear()
+        self.card_selectors.clear()
         self.all_sprites.empty()
         self.all_cards.clear()
         print("Buttons: ", self.buttons)
@@ -142,8 +162,8 @@ class ClientView:
         screen_width = screen_info.current_w
         screen_height = screen_info.current_h
 
-        self.create_button("Create a new card", screen_width / 2, screen_height / 2 - 150, 300, 50,
-                           lambda: update_screen("CREATE CARD DIALOG"))
+        # self.create_button("Create a new card", screen_width / 2, screen_height / 2 - 150, 300, 50,
+        #                    lambda: update_screen("CREATE CARD DIALOG"))
 
         self.create_button("Show all cards", screen_width/2, screen_height/2 - 90, 300, 50,
                             lambda: update_screen("DISPLAY USER CARDS"))
@@ -197,12 +217,11 @@ class ClientView:
         screen_info = pygame.display.Info()
         screen_width = screen_info.current_w
         screen_height = screen_info.current_h
-
-        print(len(user.get_cards()))
+        print(user.name)
         if not self.all_cards:
-            self.draw_cards(user.get_cards())
+            self.draw_cards(user.cards)
 
-        self.create_button("Back", screen_width - 50, 50, 100, 50,
+        self.create_button("Back", screen_width - 60, 50, 100, 50,
                            lambda: update_screen("CLIENT MAIN SCREEN"))
 
     def edit_deck_dialog(self, update_screen):
@@ -211,7 +230,7 @@ class ClientView:
         screen_height = screen_info.current_h
 
         self.create_button("Add card to deck", screen_width / 2, screen_height / 2 - 90, 300, 50,
-                           lambda:self.add_card_to_deck()) # @TODO: Implementar a chamada da tela de adição de cartas ao deck
+                           lambda: update_screen("ADD CARD TO DECK"))
         self.create_button("Remove card from deck", screen_width / 2, screen_height / 2 - 30,
                                               300, 50, lambda: self.remove_card_from_deck()) # @TODO: Implementar a chamada da tela de remoção de cartas do deck
         self.create_button("Show deck", screen_width / 2, screen_height / 2 + 30, 300, 50,
@@ -225,8 +244,25 @@ class ClientView:
     def create_match_dialog(self, ):
         print("[!] Create Match Dialog: ClientView.create_match_dialog()")
 
-    def add_card_to_deck(self, ):
+    def add_card_to_deck(self, user, update_screen, get_not_in_deck_cards):
         print("[!] Add Card to Deck: ClientView.add_card_to_deck()")
+        screen_info = pygame.display.Info()
+        screen_width = screen_info.current_w
+        screen_height = screen_info.current_h
+
+        self.txt = self.super_small_font.render("Select one or more cards to add to your deck:", True, (255, 255, 255))
+
+        self.draw_cards(get_not_in_deck_cards(user), posy = 200)
+        for card in self.all_cards:
+            self.create_card_selector(card.get_card_pos(), card.size, card.image)
+
+
+        self.create_button("Back", screen_width - 60, 50, 100, 50,
+                            lambda: update_screen("CLIENT MAIN SCREEN"))
+
+    def add_card_to_deck_action(self, ):
+        print("[!] Add Card to Deck Action: ClientView.add_card_to_deck_action()")
+
 
     def display_user_deck(self, user, update_screen):
         print("[!] Display User Deck: ClientView.display_user_deck()")
@@ -239,7 +275,7 @@ class ClientView:
         if not self.all_cards:
             self.draw_cards(user.get_deck().get_cards())
 
-        self.create_button("Back", screen_width - 50, 50, 100, 50,
+        self.create_button("Back", screen_width - 60, 50, 100, 50,
                            lambda: update_screen("CLIENT MAIN SCREEN"))
 
     def remove_card_from_deck(self,user, update_screen):
@@ -258,7 +294,7 @@ class ClientView:
         self.create_button("Cancel", screen_width / 2 - 100, screen_height / 2 + 50, 150, 50,
                            lambda: update_screen("MAIN MENU"))
 
-    def draw_cards(self, user_cards, posx=-70, posy=120):
+    def draw_cards(self, user_cards, posx=-70, posy=100):
         print("[!] Draw Cards: ClientView.draw_cards()")
         for i in range (0,len(user_cards)):
             card = user_cards[i]
@@ -283,8 +319,13 @@ class ClientView:
                 for button in self.buttons:
                     button.handle_event(event)
 
+                for card_selector in self.card_selectors:
+                    card_selector.handle_event(event)
+
             for textbox in self.textboxes:
                 textbox.handle_event(event)
+
+
 
     def upload_img(self):
         # @TODO: Implementar a seleção de arquivo
@@ -313,7 +354,7 @@ class ClientView:
         user.did_create_card = True
         set_did_create_card(user, True)
 
-        update_screen("CLIENT MAIN SCREEN")
+        update_screen("MAIN MENU")
 
     def submit_new_user(self, update_screen, set_new_user):
         print("Submitting user...")
@@ -330,6 +371,4 @@ class ClientView:
 
         set_new_user(self.username)
 
-        # @TODO: Colocar no banco de dados
-
-        update_screen("MAIN MENU")
+        update_screen("CREATE CARD DIALOG")

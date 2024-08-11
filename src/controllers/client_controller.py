@@ -48,7 +48,7 @@ class ClientController:
             self.view.create_match_dialog()
 
         elif self.get_current_state() == "ADD CARD TO DECK":
-            self.view.add_card_to_deck()
+            self.view.add_card_to_deck(self.user, self.update_screen, self.get_not_in_deck_cards)
 
         elif self.get_current_state() == "DISPLAY USER DECK":
             self.view.display_user_deck(self.user, self.update_screen)
@@ -66,6 +66,7 @@ class ClientController:
         if username:
             print(f"Username: {username}")
             self.user = self.model.get_user_by_name(username)
+            print(self.user.cards)
         print("Calling...")
         self.view.change_state(state)
         self.load_state()
@@ -76,6 +77,17 @@ class ClientController:
     def set_new_user(self, username):
         id = self.model.create_user(username)
         self.user = self.model.get_user_by_id(id)
+
+    def get_not_in_deck_cards(self, user):
+        not_in_deck_tuple_list = self.model.get_not_in_deck_cards(user.get_id())
+        not_in_deck_card_list = []
+        for card_tuple in not_in_deck_tuple_list:
+            card = self.get_card_from_tuple(card_tuple)
+            not_in_deck_card_list.append(card)
+        return not_in_deck_card_list
+
+    def get_card_from_tuple(self, card_tuple):
+        return self.model.get_card_by_id(card_tuple[0])
 
 
     def run(self):

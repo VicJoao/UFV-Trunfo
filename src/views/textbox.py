@@ -32,7 +32,7 @@ class TextBox:
             # Se a caixa de texto está ativa
             if self.active:
                 # Se a tecla pressionada é Enter, desativa a caixa de texto
-                if event.key == pygame.K_RETURN:
+                if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER or event.key == pygame.K_TAB:
                     self.active = False
                 # Se a tecla pressionada é Backspace, remove o último caractere do texto
                 elif event.key == pygame.K_BACKSPACE:

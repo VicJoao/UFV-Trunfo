@@ -115,16 +115,16 @@ class ClientModel:
         finally:
             conn.close()
 
-    def create_card(self, name, intelligence, charisma, sport, humor, creativity, appearance, user_id):
+    def create_card(self, name, intelligence, charisma, sport, humor, creativity, appearance, user_id, image_path):
         global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
 
             # Criar a carta
-            c.execute('''INSERT INTO cards (name, intelligence, charisma, sport, humor, creativity, appearance)
-                         VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                      (name, intelligence, charisma, sport, humor, creativity, appearance))
+            c.execute('''INSERT INTO cards (name, intelligence, charisma, sport, humor, creativity, appearance, img_path)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (name, intelligence, charisma, sport, humor, creativity, appearance, image_path))
             card_id = c.lastrowid  # Obter o ID da última carta criada
 
             # Adicionar a carta à tabela de conexões do usuário
@@ -265,8 +265,24 @@ class ClientModel:
                          FROM cards
                          JOIN deck ON cards.id = deck.card_id
                          WHERE deck.user_id = ?''', (user_id,))
-            deck_cards = [Card(card[0], card[1], card[2], card[3], card[4], card[5], card[6], card[7]) for card in
-                          c.fetchall()]
+            deck_cards_data = c.fetchall()
+            deck_cards = []
+            for deck_card in deck_cards_data:
+                card_dict = {
+                    "id": deck_card[0],
+                    "name": deck_card[1],
+                    "intelligence": deck_card[2],
+                    "charisma": deck_card[3],
+                    "sport": deck_card[4],
+                    "humor": deck_card[5],
+                    "creativity": deck_card[6],
+                    "appearance": deck_card[7],
+                    "image_path": deck_card[8]
+                }
+                card = Card(card_dict["id"], card_dict["name"], card_dict["intelligence"], card_dict["charisma"],
+                            card_dict["sport"], card_dict["humor"], card_dict["creativity"], card_dict["appearance"],
+                            card_dict["image_path"])
+                deck_cards.append(card)
 
             deck = Deck()
             deck.create(deck_cards)
@@ -282,14 +298,30 @@ class ClientModel:
             c = conn.cursor()
 
             # Atualizar a consulta SQL conforme a estrutura da tabela cards
-            c.execute('''SELECT id, name, intelligence, charisma, sport, humor, creativity, appearance 
+            c.execute('''SELECT id, name, intelligence, charisma, sport, humor, creativity, appearance, img_path
                          FROM cards
                          JOIN client_id_card_id ON cards.id = client_id_card_id.card_id
                          WHERE client_id_card_id.user_id = ?''', (user_id,))
 
             # Supondo que a tabela cards não tem user_id e as colunas estão na ordem correta
-            cards = [Card(card[0], card[1], card[2], card[3], card[4], card[5], card[6], card[7]) for card in
-                     c.fetchall()]
+            card_data = c.fetchall()
+            cards = []
+            for card in card_data:
+                card_dict = {
+                    "id": card[0],
+                    "name": card[1],
+                    "intelligence": card[2],
+                    "charisma": card[3],
+                    "sport": card[4],
+                    "humor": card[5],
+                    "creativity": card[6],
+                    "appearance": card[7],
+                    "img_path": card[8]
+                }
+                card = Card(card_dict["id"], card_dict["name"], card_dict["intelligence"], card_dict["charisma"],
+                            card_dict["sport"], card_dict["humor"], card_dict["creativity"], card_dict["appearance"],
+                            card_dict["img_path"])
+                cards.append(card)
             return cards
         except sqlite3.Error as e:
             print(f"Erro ao obter cartas do usuário: {e}")
@@ -306,5 +338,48 @@ class ClientModel:
             return cards
         except sqlite3.Error as e:
             print(f"Erro ao obter cartas: {e}")
+        finally:
+            conn.close()
+
+    def get_not_in_deck_cards(self, user_id):
+        try:
+            conn = sqlite3.connect(self.database)
+            c = conn.cursor()
+
+            c.execute('''SELECT cards.*
+                         FROM cards
+                         LEFT JOIN deck ON cards.id = deck.card_id
+                         WHERE deck.user_id IS NULL OR deck.user_id != ?''', (user_id,))
+            cards = c.fetchall()
+            return cards
+        except sqlite3.Error as e:
+            print(f"Erro ao obter cartas que não estão no deck: {e}")
+        finally:
+            conn.close()
+
+    def get_card_by_id(self, id):
+        try:
+            conn = sqlite3.connect(self.database)
+            c = conn.cursor()
+
+            c.execute("SELECT * FROM cards WHERE id = ?", (id,))
+            card_data = c.fetchone()
+            card_dict = {
+                "id": card_data[0],
+                "name": card_data[1],
+                "intelligence": card_data[2],
+                "charisma": card_data[3],
+                "sport": card_data[4],
+                "humor": card_data[5],
+                "creativity": card_data[6],
+                "appearance": card_data[7],
+                "image_path": card_data[8]
+            }
+            card = Card(card_dict["id"], card_dict["name"], card_dict["intelligence"], card_dict["charisma"],
+                        card_dict["sport"], card_dict["humor"], card_dict["creativity"], card_dict["appearance"],
+                        card_dict["image_path"])
+            return card
+        except sqlite3.Error as e:
+            print(f"Erro ao obter carta por id: {e}")
         finally:
             conn.close()

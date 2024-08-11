@@ -40,6 +40,7 @@ class Server:
         self.players_data = []  # Lista de dados dos jogadores
         print(f"Servidor de descoberta iniciado na porta {DISCOVERY_PORT}")
         self.game_data = GameData()
+        self.server_connection_message = []
 
     def start(self):
         try:
@@ -60,11 +61,15 @@ class Server:
 
             message = Message.from_bytes(data)
             if message.message_type == Message.HANDSHAKE:
+                self.server_connection_message.append(self.server_name)
+                self.server_connection_message.append(self.num_players)
+                self.server_connection_message.append(MAX_CLIENTS)
+                print(self.server_connection_message)
                 response = Message(Message.HANDSHAKE,
-                                   self.server_name + "-" + str(self.num_players) + "/" + str(MAX_CLIENTS))
+                                   self.server_connection_message)
                 self.server_socket.sendto(response.to_bytes(), addr)
                 print(f"Handshake com {addr}")
-
+                self.server_connection_message = []
             elif message.message_type == Message.CONNECT:
                 port = self.get_available_port()
                 if self.num_players < MAX_CLIENTS and port:

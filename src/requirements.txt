@@ -1,2 +1,7 @@
-platformdirs
-python-dotenv
+python-dotenv~=1.0.1
+numpy~=1.19.5
+Pillow~=8.1.0
+pygame~=2.0.1
+matplotlib~=3.3.3
+python3-tk~=3.8.5
+

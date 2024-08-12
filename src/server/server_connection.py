@@ -43,6 +43,8 @@ class Server:
         print(f"Servidor de descoberta iniciado na porta {DISCOVERY_PORT}")
         self.game_data = GameData()
         self.server_connection_message = []
+        self.atributo_da_rodada = ''
+        self.jogadas_de_atributo = 0
 
     def start(self):
         try:
@@ -156,12 +158,12 @@ class Server:
                                 for client_ip, client_ports in self.porta_enviar_cliente.items():
                                     # Cria a mensagem com o nome do novo jogador e a lista de jogadores conectados
                                     message = Message(Message.PLAY,
-                                                      {"plays": self.plays, "atribute": select_random_attribute()})
+                                                      {"plays": self.plays, "atribute": self.atributo_da_rodada})
                                     for client_port in client_ports:
                                         send_message(client_ip, client_port, message)
 
-                                    self.plays = []
-                                    self.jogadas_no_turno = 0
+                                self.plays = []
+                                self.jogadas_no_turno = 0
                             else:
                                 continue
 
@@ -175,6 +177,19 @@ class Server:
                             os._exit(0)
 
 
+                        elif message.message_type == Message.ATRIBUTO:
+                            self.jogadas_de_atributo += 1
+                            if self.jogadas_de_atributo == 3:
+                                self.atributo_da_rodada = select_random_attribute()
+                                for client_ip, client_ports in self.porta_enviar_cliente.items():
+                                    message_winner = Message(Message.ATRIBUTO, {"atribute": self.atributo_da_rodada})
+                                    for client_port in client_ports:
+                                        print(self.atributo_da_rodada)
+                                        send_message(client_ip, client_port, message_winner)
+
+                                self.jogadas_de_atributo = 0
+                            else:
+                                continue
 
                         elif message.message_type == Message.DISCONNECT:
                             response = Message(Message.DISCONNECT, "Disconnect")

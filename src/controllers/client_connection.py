@@ -56,6 +56,7 @@ class ServerScanner:
         self.porta_de_escuta = None
         self.original_indices = []
         self.selected_card = None
+        self.atributo_atual = ''
         # Tkinter
         self.frame = tk.Frame(root)
         self.frame.pack(padx=10, pady=10)
@@ -203,6 +204,7 @@ class ServerScanner:
                         self.game = Game(players_data, player_id)
                         self.original_indices = [(index, card) for index, card in enumerate(
                             copy.deepcopy(self.game.players_hands[self.game.my_id]['hand']))]
+                        print("ADJOAJDAODADADD")
                         self.render_game_screen()
 
                     elif message.message_type == Message.PLAY:
@@ -236,8 +238,19 @@ class ServerScanner:
                     elif message.message_type == Message.WINNER:
                         os._exit(0)
 
+                    elif message.message_type == Message.ATRIBUTO:
+                        self.atributo_atual = message.data["atribute"]
+                        #print("ATRIBUTO ATUAAAAAL", self.atributo_atual)
+                        time.sleep(1)
+                        messagebox.showinfo("",
+                                            f"Atributo da rodada: {self.atributo_atual}")  # Título vazio, mensagem
+
+
+
                     else:
                         print("MENSAGEM NAO CONHECIDA")
+
+
 
                 except socket.error as e:
                     print(f"Erro ao receber mensagem: {e}")
@@ -413,6 +426,19 @@ class ServerScanner:
             messagebox.showerror("Erro", f"Erro ao desconectar do servidor: {e}")
 
     def render_game_screen(self):
+
+        #time.sleep(5)
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((self.host, COMM_PORT))
+                s.sendall(
+                    Message(Message.ATRIBUTO, {}).to_bytes())
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {self.host}: {e}")
+
+
+
         # Access the list of cards using the key 'hand'
         my_hand = self.game.players_hands[self.game.my_id]['hand']
         print("Rendering game screen")
@@ -424,6 +450,8 @@ class ServerScanner:
             self.frame.destroy()
         else:
             print("No existing frame to destroy")
+
+
 
         # Create a new frame
         self.frame = tk.Frame(self.root)
@@ -439,7 +467,7 @@ class ServerScanner:
         print(f"Players listbox created and populated with: Você está conectado! {self.nome_jogador}")
 
         # Create and pack the players label
-        self.players_label = tk.Label(self.frame, text="Escolha uma carta...")
+        self.players_label = tk.Label(self.frame, text=f"Escolha uma carta...")
         self.players_label.pack(pady=5)
         print("Players label created and packed")
 
@@ -453,6 +481,7 @@ class ServerScanner:
         self.images = []
         print(f"Number of cards to display: {len(my_hand)}")
 
+
         for i, card in enumerate(my_hand):
             if (card.name == "Removed"):
                 continue
@@ -460,6 +489,9 @@ class ServerScanner:
             img = ImageTk.PhotoImage(card_img)
             self.images.append(img)
             print(f"Card {i} image generated and added to images list")
+
+
+
 
             button = tk.Button(self.frame, image=img, command=lambda i=i: self.send_play(i, self.game.my_id))
             button.pack(side=tk.LEFT, padx=5, pady=5)  # Use pack for buttons
@@ -484,9 +516,6 @@ class ServerScanner:
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {self.host}: {e}")
 
-    def render_round_winner(self):
-        # render round winner on screen for 3 seconds and all 3 played cards
-        pass
 
     def stop_all_threads(self):
         # Implementar a lógica para parar todas as threads

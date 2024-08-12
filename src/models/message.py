@@ -1,6 +1,7 @@
 import pickle
 
 class Message:
+    ATRIBUTO = 54
     ENCERRAR = 99
     WINNER_SELECT_CARD = 40
     ANOTHER_TYPE = 20

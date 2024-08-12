@@ -1,6 +1,8 @@
 import random
 import socket
 import threading
+import time
+
 from models.game_data import GameData
 from models.message import Message
 import os
@@ -167,6 +169,7 @@ class Server:
                             for client_ip, client_ports in self.porta_enviar_cliente.items():
                                 message_winner = Message(Message.WINNER, {})
                                 for client_port in client_ports:
+                                    time.sleep(2)
                                     send_message(client_ip, client_port, message_winner)
 
                             os._exit(0)

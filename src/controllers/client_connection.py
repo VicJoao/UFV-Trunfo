@@ -1,6 +1,7 @@
 import copy
 import socket
 import threading
+import time
 import tkinter as tk
 from tkinter import messagebox
 import os
@@ -54,6 +55,7 @@ class ServerScanner:
         self.players_list = []
         self.porta_de_escuta = None
         self.original_indices = []
+        self.selected_card = None
         # Tkinter
         self.frame = tk.Frame(root)
         self.frame.pack(padx=10, pady=10)
@@ -89,6 +91,7 @@ class ServerScanner:
     def get_random_free_port(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind(('', 0))
+            self.porta_de_escuta = s.getsockname()[1]
             self.porta_de_escuta = s.getsockname()[1]
         return self.porta_de_escuta
 
@@ -210,17 +213,22 @@ class ServerScanner:
                             if winner == -2:
                                 pass
                             else:
-                                print("Vencedor: ",winner)
+                                print("Vencedor: ", winner)
                             if self.game.my_id == winner:
-                                messagebox.showinfo("Você ganhou!")
+                                messagebox.showinfo("", "Você ganhou!")  # Título vazio, mensagem principal dentro
                                 self.win_card()
-                                self.encerrar_partida()
-                            elif winner == -2:
-                                messagebox.showinfo("Empate, ninguém ganha nada!")
-                                self.encerrar_partida()
 
+
+                            elif winner == -2:
+                                messagebox.showinfo("",
+                                                    "Empate, ninguém ganha nada!")  # Título vazio, mensagem
+                                # principal dentro
+                                self.encerrar_partida()
                             else:
-                                messagebox.showinfo("Infelizmente você perdeu!")
+                                messagebox.showinfo("",
+                                                    "Infelizmente você perdeu!")  # Título vazio, mensagem principal
+                                # dentro
+
                         else:
                             self.render_game_screen()
 
@@ -279,15 +287,37 @@ class ServerScanner:
         self.root.title("Escolha uma Carta")
         print("Window size set to 600x400 and title set to 'Escolha uma Carta'")
 
+        # Wait for card selection before proceeding
+        self.root.after(100, self.check_selection)
+
     def select_card(self, index):
-        selected_card = self.game.board.pile[index]
+        self.selected_card = self.game.board.pile[index]
         client_db = os.getenv("CLIENT_DB")
         banco_de_dados_cliente = ClientModel(client_db)
-        banco_de_dados_cliente.create_card(selected_card.name, selected_card.intelligence, selected_card.charisma,
-                                           selected_card.sport, selected_card.humor, selected_card.creativity,
-                                           selected_card.appearance, self.bd_id)
+        banco_de_dados_cliente.create_card(self.selected_card.name, self.selected_card.intelligence,
+                                           self.selected_card.charisma, self.selected_card.sport,
+                                           self.selected_card.humor, self.selected_card.creativity,
+                                           self.selected_card.appearance, self.bd_id)
         print(f"Card {index} selected and added to collection")
-        # Optionally, you might want to add code here to handle UI updates after card selection
+
+        # Optionally, update the UI or clean up
+        if hasattr(self, 'win_card_frame') and self.win_card_frame.winfo_exists():
+            self.win_card_frame.destroy()
+        print(f"Card {index} selected")
+
+        # Now that a card is selected, call a method to proceed with ending the game
+        self.end_game()
+
+    def end_game(self):
+        print("Ending the game...")
+        self.encerrar_partida()
+
+    def check_selection(self):
+        if self.selected_card is not None:
+            self.end_game()
+        else:
+            # Continue checking until a card is selected
+            self.root.after(100, self.check_selection)  # Check every 100ms
 
     def encerrar_partida(self):
         try:
@@ -300,6 +330,7 @@ class ServerScanner:
                                  f"Erro ao enviar dados para o servidor {self.host}: {e}")
 
         return
+
     def process_new_player_message(self, message):
 
         print(f"Novo jogador entrou, bem vindo, {message.data['Nome']}")
@@ -408,7 +439,7 @@ class ServerScanner:
         print(f"Players listbox created and populated with: Você está conectado! {self.nome_jogador}")
 
         # Create and pack the players label
-        self.players_label = tk.Label(self.frame, text="Aguardando jogadores...")
+        self.players_label = tk.Label(self.frame, text="Escolha uma carta...")
         self.players_label.pack(pady=5)
         print("Players label created and packed")
 
@@ -423,7 +454,7 @@ class ServerScanner:
         print(f"Number of cards to display: {len(my_hand)}")
 
         for i, card in enumerate(my_hand):
-            if(card.name == "Removed"):
+            if (card.name == "Removed"):
                 continue
             card_img = card.gen_card_img()
             img = ImageTk.PhotoImage(card_img)

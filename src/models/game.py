@@ -70,7 +70,6 @@ class Game:
         message = []
         message.append("__________________________________________")
         message.append(f"Atributo da rodada: {attribute}")
-        message.append("______________________________________________________")
         message.append("COMPARANDO AS CARTAS:")
 
         for play in plays:
@@ -85,20 +84,32 @@ class Game:
 
             # Adiciona informações sobre a carta jogada na mensagem
             # Convertendo card_played em string se não for string
-            card_info = f"Carta jogada: {card_played.name}, pelo jogador {player_id}\ninteligencia: {card_played.intelligence}\ncharisma: {card_played.charisma}\nesporte: {card_played.sport}\nhumor: {card_played.humor}\ncriatividade: {card_played.creativity}\naparencia: {card_played.appearance}\n"
+            card_info = f"Carta jogada: {card_played.name}, pelo jogador {player_id}\nInteligência: {card_played.intelligence}\nCarisma: {card_played.charisma}\nEsporte: {card_played.sport}\nHumor: {card_played.humor}\nCriatividade: {card_played.creativity}\nAparência: {card_played.appearance}\n"
             message.append(card_info)
 
-        message.append("______________________________________________________")
 
         # Declara o vencedor da rodada e adiciona à mensagem
         winner_info = self.board.declare_round_winner(attribute)
-        message.append(str(winner_info))  # Certifique-se de que winner_info é uma string
+        # Acessa o primeiro elemento da lista winner_info
+        winner_id = winner_info[0]
+
+        # Compara winner_id com self.my_id
+        # Verifica se self.my_id está dentro de winner_info
+        if self.my_id in winner_info:
+            winner_roud_message = "Você ganhou 1 ponto"
+        else:
+            winner_roud_message = "Você não ganhou 1 ponto"
+
+        # Adiciona a mensagem à lista de mensagens
+        message.append(winner_roud_message)
+
+        # Incrementa o turno
         self.turn += 1
+
 
         # Verifica se o jogo deve terminar e adiciona à mensagem
         if self.turn == NUMERO_TURNOS:
             winner = self.board.declare_winner()
-            message.append(f"Vencedor do Jogo: {winner}")
             # Mostra a mensagem em um único popup
             messagebox.showinfo("Resultado da Rodada", "\n".join(message))
             return winner

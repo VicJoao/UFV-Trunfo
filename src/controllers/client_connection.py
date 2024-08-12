@@ -1,14 +1,15 @@
 import copy
 import socket
-import sys
 import threading
 import tkinter as tk
 from tkinter import messagebox
 import os
 
+from PIL import ImageTk
+
 from models.client_model import ClientModel
-from server2.game import Game
-from server2.message import Message
+from models.game import Game
+from models.message import Message
 
 # Defina as portas globalmente
 DISCOVERY_PORT = 4242
@@ -211,15 +212,15 @@ class ServerScanner:
                             else:
                                 print("Vencedor: ",winner)
                             if self.game.my_id == winner:
-                                print("Você ganhou, selecione uma carta: ")
+                                messagebox.showinfo("Você ganhou!")
                                 self.win_card()
                                 self.encerrar_partida()
                             elif winner == -2:
-                                print(f"Empate, ninguém ganha nada!")
+                                messagebox.showinfo("Empate, ninguém ganha nada!")
                                 self.encerrar_partida()
 
                             else:
-                                print("Infelizmente você perdeu!")
+                                messagebox.showinfo("Infelizmente você perdeu!")
                         else:
                             self.render_game_screen()
 
@@ -240,17 +241,53 @@ class ServerScanner:
 
     def win_card(self):
         print("--------ESCOLHA UMA CARTA PARA GANHAR--------")
-        for index, card in enumerate(self.game.board.pile):
-            print(f"------> CARTA {index}")
-            card.print_card()
-        option = int(input("DIGITE O NUMERO DA CARTA DESEJADO:"))
-        # Conecta ao BD e adiciona a carta a colecao do jogador
-        selected_card = self.game.board.pile[option]
+
+        # Destroy the existing frame if it exists
+        if hasattr(self, 'win_card_frame') and self.win_card_frame.winfo_exists():
+            print("Destroying existing win_card_frame")
+            self.win_card_frame.destroy()
+        else:
+            print("No existing win_card_frame to destroy")
+
+        # Create a new frame for winning card selection
+        self.win_card_frame = tk.Frame(self.root)
+        self.win_card_frame.pack(padx=10, pady=10)
+        print("New win_card_frame created and packed")
+
+        # Access the pile of cards
+        pile = self.game.board.pile
+
+        # Create and pack buttons for each card in the pile
+        self.card_buttons = []
+        self.card_images = []
+
+        print(f"Number of cards in pile: {len(pile)}")
+
+        for index, card in enumerate(pile):
+            card_img = card.gen_card_img()
+            img = ImageTk.PhotoImage(card_img)
+            self.card_images.append(img)
+            print(f"Card {index} image generated and added to card_images list")
+
+            button = tk.Button(self.win_card_frame, image=img, command=lambda i=index: self.select_card(i))
+            button.pack(side=tk.LEFT, padx=5, pady=5)  # Use pack for buttons
+            self.card_buttons.append(button)
+            print(f"Button for card {index} created and packed")
+
+        # Set the window size and title for the win card screen
+        self.root.geometry("600x400")
+        self.root.title("Escolha uma Carta")
+        print("Window size set to 600x400 and title set to 'Escolha uma Carta'")
+
+    def select_card(self, index):
+        selected_card = self.game.board.pile[index]
         client_db = os.getenv("CLIENT_DB")
         banco_de_dados_cliente = ClientModel(client_db)
         banco_de_dados_cliente.create_card(selected_card.name, selected_card.intelligence, selected_card.charisma,
-                                                selected_card.sport, selected_card.humor, selected_card.creativity,
-                                                selected_card.appearance, self.bd_id)
+                                           selected_card.sport, selected_card.humor, selected_card.creativity,
+                                           selected_card.appearance, self.bd_id)
+        print(f"Card {index} selected and added to collection")
+        # Optionally, you might want to add code here to handle UI updates after card selection
 
     def encerrar_partida(self):
         try:
@@ -345,19 +382,63 @@ class ServerScanner:
             messagebox.showerror("Erro", f"Erro ao desconectar do servidor: {e}")
 
     def render_game_screen(self):
-        # Acessa a lista de cartas usando a chave 'hand'
+        # Access the list of cards using the key 'hand'
         my_hand = self.game.players_hands[self.game.my_id]['hand']
+        print("Rendering game screen")
+        print(f"Player hand: {my_hand}")
 
-        # Exibe as cartas e seus índices originais
-        for index, card in self.original_indices:
-            # Verifica se a carta original está na mão do jogador
-            if card in my_hand:
-                print("_____________________________")
-                print(f"------> SELECIONE: {index}")
-                card.print_card()  # Chama o método para imprimir informações detalhadas da carta
-        option = int(input("DIGITE A OPÇÃO DESEJADA:"))
+        # Destroy the existing frame if it exists
+        if hasattr(self, 'frame') and self.frame.winfo_exists():
+            print("Destroying existing frame")
+            self.frame.destroy()
+        else:
+            print("No existing frame to destroy")
 
-        self.send_play(option, self.game.my_id)
+        # Create a new frame
+        self.frame = tk.Frame(self.root)
+        self.frame.pack(padx=10, pady=10)
+        print("New frame created and packed")
+
+        # Create and pack the players listbox
+        self.players_listbox = tk.Listbox(self.frame, width=50, height=10)
+        self.players_listbox.pack()
+        self.players_listbox.config(state=tk.NORMAL)
+        self.players_listbox.insert(tk.END, f"Você está conectado! {self.nome_jogador}")
+        self.players_listbox.config(state=tk.DISABLED)
+        print(f"Players listbox created and populated with: Você está conectado! {self.nome_jogador}")
+
+        # Create and pack the players label
+        self.players_label = tk.Label(self.frame, text="Aguardando jogadores...")
+        self.players_label.pack(pady=5)
+        print("Players label created and packed")
+
+        # Create and pack the disconnect button
+        self.disconnect_button = tk.Button(self.frame, text="Desconectar", command=self.disconnect_from_server)
+        self.disconnect_button.pack(pady=5)
+        print("Disconnect button created and packed")
+
+        # Add buttons with cards using pack
+        self.buttons = []
+        self.images = []
+        print(f"Number of cards to display: {len(my_hand)}")
+
+        for i, card in enumerate(my_hand):
+            if(card.name == "Removed"):
+                continue
+            card_img = card.gen_card_img()
+            img = ImageTk.PhotoImage(card_img)
+            self.images.append(img)
+            print(f"Card {i} image generated and added to images list")
+
+            button = tk.Button(self.frame, image=img, command=lambda i=i: self.send_play(i, self.game.my_id))
+            button.pack(side=tk.LEFT, padx=5, pady=5)  # Use pack for buttons
+            self.buttons.append(button)
+            print(f"Button for card {i} created and packed")
+
+        # Set the window size and title
+        self.root.geometry("600x400")
+        self.root.title("Jogo")
+        print("Window size set to 600x400 and title set to 'Jogo'")
 
     def send_play(self, option, id):
         print("____________________________")

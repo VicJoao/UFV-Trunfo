@@ -1,8 +1,8 @@
 import random
 import socket
 import threading
-from server2.game_data import GameData
-from server2.message import Message
+from models.game_data import GameData
+from models.message import Message
 import os
 
 # Define as portas e variáveis globais
@@ -219,8 +219,3 @@ class Server:
                 message_data_compact = Message(Message.START_GAME, self.game_data.compact(client_port))
                 # Envia a mensagem compactada para o cliente
                 send_message(client_ip, client_port, message_data_compact)
-
-
-if __name__ == '__main__':
-    server = Server()
-    server.start()

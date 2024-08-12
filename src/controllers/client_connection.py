@@ -6,11 +6,14 @@ import tkinter as tk
 from tkinter import messagebox
 import os
 
+import psutil
 from PIL import ImageTk
 
 from models.client_model import ClientModel
 from models.game import Game
 from models.message import Message
+
+import socket
 
 # Defina as portas globalmente
 DISCOVERY_PORT = 4242
@@ -19,24 +22,37 @@ LISTEN_PORT = 4255
 
 
 # Escanear IPS
+import ipaddress
+
+def get_ip_and_netmask():
+    for interface, addresses in psutil.net_if_addrs().items():
+        for addr in addresses:
+            if addr.family == socket.AF_INET and not addr.address.startswith("127."):
+                return addr.address, addr.netmask
+    return None, None
+
+
 def get_local_ips():
-    local_ips = []
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.settimeout(0)
-    try:
-        s.connect(('8.8.8.8', 1))
-        local_ip = s.getsockname()[0]
-    except Exception:
-        local_ip = '127.0.0.1'
-    finally:
-        s.close()
+    # Obter o IP e a máscara de sub-rede
+    local_ip, netmask = get_ip_and_netmask()
 
-    base_ip = '.'.join(local_ip.split('.')[:-1])
+    if local_ip and netmask:
+        # Criar a rede IPv4 usando o IP e a máscara
+        network = ipaddress.IPv4Network(f"{local_ip}/{netmask}", strict=False)
 
-    for i in range(1, 255):
-        local_ips.append(f"{base_ip}.{i}")
+        print(f"Endereço IP local: {local_ip}")
+        print(f"Máscara de sub-rede: {netmask}")
+        print(f"IP da rede: {network.network_address}")
+        print(f"IP de broadcast: {network.broadcast_address}")
 
-    return local_ips
+        # Retornar uma lista com todos os IPs utilizáveis na faixa (exclui rede e broadcast)
+        return [str(ip) for ip in network.hosts()]
+    else:
+        print("Não foi possível obter o endereço IP e a máscara de sub-rede.")
+        return []
+
+
+
 
 
 class ServerScanner:

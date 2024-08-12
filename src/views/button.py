@@ -26,6 +26,7 @@ class Button:
         text_rect = text_surface.get_rect(center=self.rect.center)
         screen.blit(text_surface, text_rect)
 
+
     def handle_event(self, event):
             mouse_pos = pygame.mouse.get_pos()
             if self.rect.collidepoint(mouse_pos):

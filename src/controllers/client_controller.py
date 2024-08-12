@@ -30,7 +30,7 @@ class ClientController:
 
         elif self.get_current_state() == "CREATE CARD DIALOG":
             # print("[!] Create Card Dialog: ClientView.create_card_dialog()")
-            self.view.create_card_screen(self.user, self.update_screen, self.set_did_create_card)
+            self.view.create_card_screen(self.user, self.update_screen, self.set_did_create_card, self.create_new_card)
 
         elif self.get_current_state() == "DISPLAY USER CARDS":
             self.view.display_user_cards(self.user, self.update_screen)
@@ -75,6 +75,10 @@ class ClientController:
     def set_new_user(self, username):
         id = self.model.create_user(username)
         self.user = self.model.get_user_by_id(id)
+
+    def create_new_card(self, name, intelligence, charisma, sport, humor, creativity, appearance, user_id, image_path):
+        self.model.create_card(name, intelligence, charisma, sport, humor, creativity, appearance, user_id, image_path)
+
 
     def get_not_in_deck_cards(self, user):
         not_in_deck_tuple_list = self.model.get_not_in_deck_cards(user.get_id())

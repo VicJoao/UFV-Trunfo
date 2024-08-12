@@ -48,8 +48,6 @@ class ClientView:
         self.card_selectors = []
         self.main_menu_text = []
 
-
-
     def draw_widgets(self):
         while True:
             self.screen.fill((0, 77, 0))
@@ -179,7 +177,7 @@ class ClientView:
         self.create_button("Back", screen_width / 2, screen_height / 2 + 150, 100, 50,
                            lambda: update_screen("MAIN MENU"))
 
-    def create_card_screen(self,user, update_screen, set_did_create_card):
+    def create_card_screen(self,user, update_screen, set_did_create_card, create_new_card):
         if user.did_create_card:
             print("Card already created.") #@TODO: Implementar notificação de erro
             update_screen("CLIENT MAIN SCREEN")
@@ -209,7 +207,7 @@ class ClientView:
             self.create_button("Cancel", screen_width / 2 - 100, screen_height / 2 + 280, 150, 50,
                                lambda : update_screen("CLIENT MAIN SCREEN"))
             self.create_button("Submit", screen_width / 2 + 100, screen_height / 2 + 280, 150, 50,
-                               lambda: self.submit_new_card(user, update_screen, set_did_create_card))
+                               lambda: self.submit_new_card(user, update_screen, set_did_create_card, create_new_card))
 
     def display_user_cards(self, user, update_screen):
         print("[!] Display User Cards: ClientView.display_user_cards()")
@@ -384,7 +382,7 @@ class ClientView:
             self.img_filename = filename  # Carregar a imagem
             self.txt = self.super_small_font.render(f"Selected: {filename}", True, (255, 255, 255))
 
-    def submit_new_card(self, user, update_screen, set_did_create_card):
+    def submit_new_card(self, user, update_screen, set_did_create_card, create_new_card):
         print("Submitting card...")
         try:
             for i in range(1, len(self.textboxes)):
@@ -399,6 +397,11 @@ class ClientView:
         print("Submission complete! Please check:\n", self.submission) # @TODO: Implementar notificação de erro
         user.did_create_card = True
         set_did_create_card(user, True)
+        create_new_card(self.submission["name"], self.submission["intelligence"], self.submission["charisma"],
+                        self.submission["sport"], self.submission["humor"], self.submission["creativity"],
+                        self.submission["appearance"], user.get_id(), self.submission["image"])
+
+
 
         update_screen("MAIN MENU")
 

@@ -9,7 +9,7 @@ import os
 load_dotenv()
 
 # Load image using pygame
-image_path = os.path.join("src/assets", "default.jpg")
+image_path = os.path.join("assets", "default.jpg")
 IMG = pygame.image.load(image_path)
 
 # Get rectangle and size from IMG

@@ -1,41 +1,43 @@
-# Nome do pacote principal
-PACKAGE = UFV-Trunfo
+SHELL := /bin/bash
 
-# Alvo padrão: instala dependências e roda o projeto
-.PHONY: all
+# Nome do arquivo de requisitos
+REQUIREMENTS_FILE = requirements.txt
+VENV_DIR = venv
+
+# Alvo padrão: Instalar as dependências e rodar o projeto
 all: install run
 
-# Instalar as dependências
-.PHONY: install
-install:
-	# Se você usar pip para instalação global
-	pip install --upgrade pip
-	pip install -r requirements.txt
+# Alvo para verificar se o python3-venv está instalado
+check_venv:
+	@if ! dpkg -s python3-venv >/dev/null 2>&1; then \
+		echo "python3-venv não está instalado."; \
+		echo "Por favor, instale usando: sudo apt install python3-venv"; \
+		exit 1; \
+	fi
 
-	# Se você usar conda
-	# conda install --file requirements.txt
+# Alvo para criar o ambiente virtual e instalar as dependências
+$(VENV_DIR)/bin/activate: $(REQUIREMENTS_FILE) check_venv
+	python3 -m venv $(VENV_DIR)
+	@$(VENV_DIR)/bin/pip install --upgrade pip
+	@$(VENV_DIR)/bin/pip install -r $(REQUIREMENTS_FILE)
 
-# Rodar o projeto
-.PHONY: run
-run:
-	python3 main.py &
-	python3 main2.py &
-	python3 main3.py &
-	python3 run_server.py
+# Alvo para instalar as dependências
+install: $(VENV_DIR)/bin/activate
 
-# Limpar arquivos temporários
-.PHONY: clean
+# Alvo para rodar o projeto
+run: install
+	$(VENV_DIR)/bin/python3 main.py & \
+	$(VENV_DIR)/bin/python3 main2.py & \
+	$(VENV_DIR)/bin/python3 main3.py & \
+	$(VENV_DIR)/bin/python3 run_server.py
+
+# Alvo para limpar arquivos temporários
 clean:
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -exec rm -r {} +
 
-# Limpar todas as dependências instaladas (usado com pip)
-.PHONY: dist-clean
+# Alvo para remover o ambiente virtual
 dist-clean: clean
-	pip uninstall -r requirements.txt -y
+	rm -rf $(VENV_DIR)
 
-# Limpar ambiente conda
-.PHONY: conda-clean
-conda-clean: clean
-	conda env remove --name $(PACKAGE)
-
+.PHONY: all check_venv install run clean dist-clean

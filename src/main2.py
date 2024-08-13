@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from controllers.client_controller import ClientController #-se de que o caminho está correto
+from controllers.client_controller import ClientController
 
 
 def main():

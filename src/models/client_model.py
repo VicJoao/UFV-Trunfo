@@ -32,7 +32,6 @@ class ClientModel:
                             appearance INTEGER
                         )''')
 
-            # Criar tabela de associando cartas aos usuários)
             c.execute('''CREATE TABLE IF NOT EXISTS client_id_card_id (
                             user_id INTEGER,
                             card_id INTEGER,
@@ -140,7 +139,6 @@ class ClientModel:
 
         finally:
             conn.close()
-
 
     def remove_card_from_deck(self, user_id, card_name):
         try:

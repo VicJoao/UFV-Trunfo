@@ -3,7 +3,7 @@ from tkinter import messagebox
 from models.board import Board
 from models.card import Card
 
-NUMERO_TURNOS = 5
+NUMERO_TURNOS = 3
 
 
 class Game:
@@ -12,10 +12,9 @@ class Game:
             self.player_id = player_id
             self.card_id = card
 
-    def __init__(self, data, id: int):
-        self.my_id = id
+    def __init__(self, data, index: int):
+        self.my_id = index
 
-        # Inicializa a lista com um tamanho suficiente para armazenar todos os jogadores
         max_id = max(player.id for player in data)
         self.players_hands = [None] * (max_id + 1)
 
@@ -29,14 +28,11 @@ class Game:
         self.turn = 0
 
     def remove_card(self, player_id: int, card_index: int):
-        # Verifica se o ID do jogador é válido
         if player_id >= len(self.players_hands):
             raise IndexError(f"ID do jogador {player_id} é inválido.")
 
-        # Obtém a mão do jogador
         player_hand = self.players_hands[player_id].get('hand', [])
 
-        # Verifica se o índice da carta é válido
         if card_index >= len(player_hand):
             raise IndexError(f"Índice da carta {card_index} é inválido para o jogador {player_id}.")
 
@@ -67,10 +63,7 @@ class Game:
 
     def play_turn(self, plays: list, attribute: str):
         # Concatena todas as mensagens em uma única string com quebras de linha
-        message = []
-        message.append("__________________________________________")
-        message.append(f"Atributo da rodada: {attribute}")
-        message.append("COMPARANDO AS CARTAS:")
+        message = ["__________________________________________", f"Atributo da rodada: {attribute}"]
 
         for play in plays:
             player_id = play[0]  # ID do jogador
@@ -82,30 +75,25 @@ class Game:
             # Adiciona a carta ao tabuleiro
             self.board.add_card(card_played, player_id)
 
-            # Adiciona informações sobre a carta jogada na mensagem
-            # Convertendo card_played em string se não for string
-            card_info = f"Carta jogada: {card_played.name}, pelo jogador {player_id}\nInteligência: {card_played.intelligence}\nCarisma: {card_played.charisma}\nEsporte: {card_played.sport}\nHumor: {card_played.humor}\nCriatividade: {card_played.creativity}\nAparência: {card_played.appearance}\n"
+            card_info = (f"Carta jogada: {card_played.name}, pelo jogador {player_id}\n"
+                         f"Inteligência: {card_played.intelligence}\n"
+                         f"Carisma: {card_played.charisma}\nEsporte: {card_played.sport}\n"
+                         f"Humor: {card_played.humor}\nCriatividade: {card_played.creativity}\n"
+                         f"Aparência: {card_played.appearance}\n")
             message.append(card_info)
-
 
         # Declara o vencedor da rodada e adiciona à mensagem
         winner_info = self.board.declare_round_winner(attribute)
-        # Acessa o primeiro elemento da lista winner_info
-        winner_id = winner_info[0]
 
-        # Compara winner_id com self.my_id
-        # Verifica se self.my_id está dentro de winner_info
         if self.my_id in winner_info:
-            winner_roud_message = "Você ganhou 1 ponto"
+            winner_round_message = "Você ganhou 1 ponto. Boa escolha!"
         else:
-            winner_roud_message = "Você não ganhou 1 ponto"
+            winner_round_message = "Você perdeu!"
 
         # Adiciona a mensagem à lista de mensagens
-        message.append(winner_roud_message)
+        message.append(winner_round_message)
 
-        # Incrementa o turno
         self.turn += 1
-
 
         # Verifica se o jogo deve terminar e adiciona à mensagem
         if self.turn == NUMERO_TURNOS:
@@ -119,14 +107,9 @@ class Game:
         return -1
 
 
-# Função para iniciar o Tkinter
 def start_gui():
     root = tk.Tk()
-    root.withdraw()  # Oculta a janela principal, pois não precisamos dela
-
-    # Aqui você pode iniciar o jogo e passar o Tkinter root para a classe Game, se necessário
-    # Exemplo: game_instance = Game(data, id)
-
+    root.withdraw()
     root.mainloop()
 
 

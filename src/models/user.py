@@ -1,11 +1,13 @@
 from models.card import Card
 
+
 class User:
     def __init__(self):
         self.name = ""
         self.cards = []
         self.deck = []
         self.id = 0
+
     def rename(self, id, name):
         self.name = name
         self.id = id

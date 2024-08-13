@@ -1,5 +1,7 @@
 import random
 from models.card import Card
+
+
 class Board:
     def __init__(self, my_cards):
         self.round_stat = ''
@@ -39,7 +41,7 @@ class Board:
             return self.points.index(max_points)  # Índice do vencedor
 
     def declare_round_winner(self, attribute: str):
-        # Certifica-se de que todos os itens em self.cards são realmente objetos Card
+        # Certifica-se de que todos os itens em self.cards são realmente objeto Card
         if not all(isinstance(card, Card) for card in self.cards):
             raise TypeError("Todos os itens em self.cards devem ser objetos do tipo Card.")
 
@@ -64,4 +66,3 @@ class Board:
 
         # Retorna os índices dos vencedores (podem ser vários)
         return winners
-

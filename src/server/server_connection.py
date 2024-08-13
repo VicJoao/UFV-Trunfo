@@ -60,7 +60,7 @@ class Server:
     # Thread usada para o server ficar escutando os clientes, na hora de conectar
     def handle_discovery(self):
         while True:
-            data, addr = self.server_socket.recvfrom(1024)
+            data, addr = self.server_socket.recvfrom(4096)
             client_ip = addr[0]  # Extrai apenas o IP do cliente
 
             message = Message.from_bytes(data)
@@ -106,7 +106,7 @@ class Server:
                 with conn:
                     print(f"Conexão estabelecida com {addr}")
                     try:
-                        message = Message.from_bytes(conn.recv(1024))
+                        message = Message.from_bytes(conn.recv(4096))
 
                         # Recebe os dados do cliente, como nome e deck e porta, salva, além disso, verifica se já
                         # pode começar uma partida
@@ -175,7 +175,6 @@ class Server:
                                     send_message(client_ip, client_port, message_winner)
 
                             os._exit(0)
-
 
                         elif message.message_type == Message.ATRIBUTO:
                             self.jogadas_de_atributo += 1

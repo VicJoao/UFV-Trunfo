@@ -20,9 +20,9 @@ DISCOVERY_PORT = 4242
 COMM_PORT = None
 LISTEN_PORT = 4255
 
-
 # Escanear IPS
 import ipaddress
+
 
 def get_ip_and_netmask():
     for interface, addresses in psutil.net_if_addrs().items():
@@ -50,9 +50,6 @@ def get_local_ips():
     else:
         print("Não foi possível obter o endereço IP e a máscara de sub-rede.")
         return []
-
-
-
 
 
 class ServerScanner:
@@ -233,7 +230,7 @@ class ServerScanner:
                             else:
                                 print("Vencedor: ", winner)
                             if self.game.my_id == winner:
-                                messagebox.showinfo("", "Você ganhou!")  # Título vazio, mensagem principal dentro
+                                messagebox.showinfo("", "Você ganhou! Escolha uma carta para sua coleção:")  # Título vazio, mensagem principal dentro
                                 self.win_card()
 
 
@@ -254,9 +251,22 @@ class ServerScanner:
                     elif message.message_type == Message.WINNER:
                         os._exit(0)
 
+
                     elif message.message_type == Message.ATRIBUTO:
-                        self.atributo_atual = message.data["atribute"]
-                        #print("ATRIBUTO ATUAAAAAL", self.atributo_atual)
+
+                        atributo_ingles = message.data["atribute"]
+                        if atributo_ingles == "intelligence":
+                            self.atributo_atual = "Inteligência"
+                        elif atributo_ingles == "charisma":
+                            self.atributo_atual = "Carisma"
+                        elif atributo_ingles == "sport":
+                            self.atributo_atual = "Esporte"
+                        elif atributo_ingles == "humor":
+                            self.atributo_atual = "Humor"
+                        elif atributo_ingles == "creativity":
+                            self.atributo_atual = "Criatividade"
+                        elif atributo_ingles == "appearance":
+                            self.atributo_atual = "Aparência"
                         time.sleep(1)
                         messagebox.showinfo("",
                                             f"Atributo da rodada: {self.atributo_atual}")  # Título vazio, mensagem
@@ -288,7 +298,7 @@ class ServerScanner:
 
         # Create a new frame for winning card selection
         self.win_card_frame = tk.Frame(self.root)
-        self.win_card_frame.pack(padx=10, pady=10)
+        self.win_card_frame.pack(expand=True, fill=tk.BOTH)  # Expand the frame to fill the window
         print("New win_card_frame created and packed")
 
         # Access the pile of cards
@@ -300,21 +310,49 @@ class ServerScanner:
 
         print(f"Number of cards in pile: {len(pile)}")
 
+        # Define the number of columns for each row
+        bottom_row_cols = 7
+        top_row_cols = 8
+
+        # Configure grid rows and columns for the layout
+        self.win_card_frame.grid_rowconfigure(0, weight=1)
+        self.win_card_frame.grid_rowconfigure(1, weight=1)
+        self.win_card_frame.grid_columnconfigure(tuple(range(top_row_cols)), weight=1)
+        self.win_card_frame.grid_columnconfigure(tuple(range(bottom_row_cols)), weight=1)
+
+        # Create buttons and place them in the grid
         for index, card in enumerate(pile):
             card_img = card.gen_card_img()
             img = ImageTk.PhotoImage(card_img)
             self.card_images.append(img)
             print(f"Card {index} image generated and added to card_images list")
 
-            button = tk.Button(self.win_card_frame, image=img, command=lambda i=index: self.select_card(i))
-            button.pack(side=tk.LEFT, padx=5, pady=5)  # Use pack for buttons
-            self.card_buttons.append(button)
-            print(f"Button for card {index} created and packed")
+            button = tk.Button(self.win_card_frame, image=img, command=lambda i=index: self.select_card(i),
+                               cursor="hand2")
+            if index < top_row_cols:
+                row = 0  # Top row
+                col = index  # Column index
+            else:
+                row = 1  # Bottom row
+                col = index - top_row_cols  # Adjust column index for the bottom row
 
-        # Set the window size and title for the win card screen
-        self.root.geometry("600x400")
+            button.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")  # Use grid for button placement
+            self.card_buttons.append(button)
+            print(f"Button for card {index} created and placed in grid at row {row}, column {col}")
+
+        # Adjust grid weights to ensure proper layout
+        self.win_card_frame.grid_rowconfigure(0, weight=1)
+        self.win_card_frame.grid_rowconfigure(1, weight=1)
+        self.win_card_frame.grid_columnconfigure(tuple(range(top_row_cols)), weight=1)
+        self.win_card_frame.grid_columnconfigure(tuple(range(bottom_row_cols)), weight=1)
+
+        # Set the window to full screen
+        self.root.attributes("-fullscreen", True)
+        self.root.update_idletasks()  # Ensure the window has been fully rendered
+
+        # Set the window title for the win card screen
         self.root.title("Escolha uma Carta")
-        print("Window size set to 600x400 and title set to 'Escolha uma Carta'")
+        print("Window title set to 'Escolha uma Carta'")
 
         # Wait for card selection before proceeding
         self.root.after(100, self.check_selection)
@@ -328,6 +366,9 @@ class ServerScanner:
                                            self.selected_card.humor, self.selected_card.creativity,
                                            self.selected_card.appearance, self.bd_id)
         print(f"Card {index} selected and added to collection")
+
+        # Show a message box confirming that the card has been added
+        messagebox.showinfo("Carta Adicionada", f"A carta '{self.selected_card.name}' foi adicionada à coleção. Jogo encerrando...")
 
         # Optionally, update the UI or clean up
         if hasattr(self, 'win_card_frame') and self.win_card_frame.winfo_exists():
@@ -442,18 +483,13 @@ class ServerScanner:
             messagebox.showerror("Erro", f"Erro ao desconectar do servidor: {e}")
 
     def render_game_screen(self):
-
-        #time.sleep(5)
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((self.host, COMM_PORT))
-                s.sendall(
-                    Message(Message.ATRIBUTO, {}).to_bytes())
+                s.sendall(Message(Message.ATRIBUTO, {}).to_bytes())
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {self.host}: {e}")
-
-
 
         # Access the list of cards using the key 'hand'
         my_hand = self.game.players_hands[self.game.my_id]['hand']
@@ -466,8 +502,6 @@ class ServerScanner:
             self.frame.destroy()
         else:
             print("No existing frame to destroy")
-
-
 
         # Create a new frame
         self.frame = tk.Frame(self.root)
@@ -497,27 +531,31 @@ class ServerScanner:
         self.images = []
         print(f"Number of cards to display: {len(my_hand)}")
 
-
-        for i, card in enumerate(my_hand):
-            if (card.name == "Removed"):
+        for index, card in enumerate(my_hand):
+            if card.name == "Removed":
                 continue
             card_img = card.gen_card_img()
             img = ImageTk.PhotoImage(card_img)
             self.images.append(img)
-            print(f"Card {i} image generated and added to images list")
+            print(f"Card {index} image generated and added to images list")
 
-
-
-
-            button = tk.Button(self.frame, image=img, command=lambda i=i: self.send_play(i, self.game.my_id))
+            button = tk.Button(self.frame, image=img, command=lambda i=index: self.handle_card_selection(i),
+                               cursor='hand2')
             button.pack(side=tk.LEFT, padx=5, pady=5)  # Use pack for buttons
             self.buttons.append(button)
-            print(f"Button for card {i} created and packed")
+            print(f"Button for card {index} created and packed")
 
         # Set the window size and title
         self.root.geometry("600x400")
         self.root.title("Jogo")
         print("Window size set to 600x400 and title set to 'Jogo'")
+
+    def handle_card_selection(self, index):
+        # Handle card selection
+        self.send_play(index, self.game.my_id)
+        # Disable all card buttons after a selection
+        for button in self.buttons:
+            button.config(state=tk.DISABLED)
 
     def send_play(self, option, id):
         print("____________________________")
@@ -531,7 +569,6 @@ class ServerScanner:
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor {self.host}: {e}")
-
 
     def stop_all_threads(self):
         # Implementar a lógica para parar todas as threads

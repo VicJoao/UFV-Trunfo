@@ -1,22 +1,23 @@
 import pickle
 
+
 class Message:
-    ATRIBUTO = 54
-    ENCERRAR = 99
-    WINNER_SELECT_CARD = 40
-    ANOTHER_TYPE = 20
-    START_GAME = 15
-    LISTEN_PORT = 8
+    ATRIBUTO = 1
+    ENCERRAR = 2
+    WINNER_SELECT_CARD = 3
+    ANOTHER_TYPE = 4
+    START_GAME = 5
+    LISTEN_PORT = 6
     NEW_PLAYER = 7
-    HANDSHAKE = 1
-    CONNECT = 2
-    PLAYER_DATA = 3
-    DISCONNECT = 4
-    TYPO_ERROR = 5
-    PLAYER_LIST = 6
-    CLIENT_PORT = 10
-    PLAY = 11
-    WINNER = 12
+    HANDSHAKE = 8
+    CONNECT = 9
+    PLAYER_DATA = 10
+    DISCONNECT = 11
+    TYPO_ERROR = 12
+    PLAYER_LIST = 13
+    CLIENT_PORT = 14
+    PLAY = 15
+    WINNER = 16
 
     def __init__(self, message_type, data):
         self.message_type = message_type

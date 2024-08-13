@@ -1,6 +1,6 @@
 import random
 
-NUMERO_CARTAS = 5
+NUMERO_CARTAS = 3
 
 
 def get_random_cards(cards):
@@ -28,7 +28,6 @@ class GameData:
         new_player = self.PlayerData(name, player_id, deck, port)
         self.players_data.append(new_player)
 
-        # Imprime os dados de todos os jogadores
         for player in self.players_data:
             print(f"ID: {player.id}, Nome: {player.name}, Mão: {player.hand}, Porta: {player.address}")
 

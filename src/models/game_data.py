@@ -1,6 +1,6 @@
 import random
 
-NUMERO_CARTAS = 3
+NUMERO_CARTAS = 5
 
 
 def get_random_cards(cards):

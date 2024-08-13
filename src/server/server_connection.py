@@ -65,11 +65,14 @@ class Server:
 
             message = Message.from_bytes(data)
             if message.message_type == Message.HANDSHAKE:
-
                 response = Message(Message.HANDSHAKE,
                                    self.server_name + "-" + str(self.num_players) + "/" + str(MAX_CLIENTS))
-                self.server_socket.sendto(response.to_bytes(), addr)
-                print(f"Handshake com {addr}")
+
+                try:
+                    self.server_socket.sendto(response.to_bytes(), addr)
+                    print(f"Handshake com {addr} enviado com sucesso.")
+                except Exception as e:
+                    print(f"Erro ao enviar handshake para {addr}: {e}")
 
             elif message.message_type == Message.CONNECT:
                 port = self.get_available_port()

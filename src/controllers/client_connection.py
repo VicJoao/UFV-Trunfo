@@ -46,6 +46,8 @@ def get_local_ips():
         print(f"IP de broadcast: {network.broadcast_address}")
 
         # Retornar uma lista com todos os IPs utilizáveis na faixa (exclui rede e broadcast)
+        print([str(ip) for ip in network.hosts()])
+
         return [str(ip) for ip in network.hosts()]
     else:
         print("Não foi possível obter o endereço IP e a máscara de sub-rede.")
@@ -172,6 +174,7 @@ class ServerScanner:
                 message = Message.from_bytes(data)
                 if message.message_type == Message.HANDSHAKE:
                     server_name = message.data
+                    print(server_name)
                     self.servers[addr[0]] = server_name
                     self.root.after(0, lambda: self.update_server_list(server_name))
                 else:

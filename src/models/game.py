@@ -3,7 +3,7 @@ from tkinter import messagebox
 from models.board import Board
 from models.card import Card
 
-NUMERO_TURNOS = 3
+NUMERO_TURNOS = 5
 
 
 class Game:

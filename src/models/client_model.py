@@ -1,4 +1,5 @@
 import sqlite3
+import random
 from models.card import Card
 from models.deck import Deck
 from models.user import User
@@ -103,8 +104,9 @@ class ClientModel:
             c.execute("SELECT id FROM client WHERE name = ?", (name,))
             user_id = c.fetchone()[0]
 
-            # IDs das cartas que devem ser vinculadas
-            card_ids = [5, 6, 7, 8, 9]
+            ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+
+            card_ids = random.sample(ids, 10)
             self.link_cards_to_user(user_id, card_ids)
 
             return user_id

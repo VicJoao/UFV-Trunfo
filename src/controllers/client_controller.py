@@ -7,15 +7,26 @@ from controllers.client_connection import ServerScanner
 
 
 def get_card_attributes():
-    attributes = {
-        "Intelligence": simpledialog.askinteger("Card Attribute", "Enter Intelligence:"),
-        "Charisma": simpledialog.askinteger("Card Attribute", "Enter Charisma:"),
-        "Sport": simpledialog.askinteger("Card Attribute", "Enter Sport:"),
-        "Humor": simpledialog.askinteger("Card Attribute", "Enter Humor:"),
-        "Creativity": simpledialog.askinteger("Card Attribute", "Enter Creativity:"),
-        "Appearance": simpledialog.askinteger("Card Attribute", "Enter Appearance:")
-    }
-    return [attributes[key] for key in ["Intelligence", "Charisma", "Sport", "Humor", "Creativity", "Appearance"]]
+    while True:
+        attributes = {
+            "Inteligência": simpledialog.askinteger("Atributo da Carta", "Insira Inteligência (0-10):", minvalue=0, maxvalue=10),
+            "Carisma": simpledialog.askinteger("Atributo da Carta", "Insira Carisma (0-10):", minvalue=0, maxvalue=10),
+            "Esporte": simpledialog.askinteger("Atributo da Carta", "Insira Esporte (0-10):", minvalue=0, maxvalue=10),
+            "Humor": simpledialog.askinteger("Atributo da Carta", "Insira Humor (0-10):", minvalue=0, maxvalue=10),
+            "Criatividade": simpledialog.askinteger("Atributo da Carta", "Insira Criatividade (0-10):", minvalue=0, maxvalue=10),
+            "Aparência": simpledialog.askinteger("Atributo da Carta", "Insira Aparência (0-10):", minvalue=0, maxvalue=10)
+        }
+
+        # Calcula a soma dos atributos
+        total = sum(attributes.values())
+
+        # Verifica se a soma total está dentro do limite
+        if total <= 30:
+            break
+        else:
+            messagebox.showerror("Erro", f"A soma dos atributos é {total}, mas deve ser no máximo 30. Por favor, insira os valores novamente.")
+
+    return [attributes[key] for key in ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência"]]
 
 
 class ClientController:

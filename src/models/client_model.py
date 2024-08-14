@@ -47,19 +47,7 @@ class ClientModel:
         finally:
             conn.close()
 
-    def link_cards_to_user(self, user_id, card_ids):
-        try:
-            conn = sqlite3.connect(self.database)
-            c = conn.cursor()
 
-            for card_id in card_ids:
-                c.execute("INSERT INTO client_id_card_id (user_id, card_id) VALUES (?, ?)", (user_id, card_id))
-
-            conn.commit()
-        except sqlite3.Error as e:
-            print(f"Erro ao vincular cartas ao usuário: {e}")
-        finally:
-            conn.close()
 
     def add_card_to_deck(self, user_id, card_id):
         try:
@@ -94,6 +82,46 @@ class ClientModel:
             if conn:
                 conn.close()
 
+    def link_cards_to_deck(self, user_id):
+        try:
+            conn = sqlite3.connect(self.database)
+            c = conn.cursor()
+
+            # Seleciona todas as cartas associadas ao usuário
+            c.execute("SELECT card_id FROM client_id_card_id WHERE user_id = ?", (user_id,))
+            card_ids = [row[0] for row in c.fetchall()]
+
+            if len(card_ids) < 6:
+                raise ValueError("Não há cartas suficientes associadas ao usuário para adicionar ao deck.")
+
+            # Seleciona aleatoriamente 6 cartas do usuário
+            selected_card_ids = random.sample(card_ids, 6)
+
+            # Adiciona as cartas selecionadas ao deck do usuário
+            for card_id in selected_card_ids:
+                c.execute("INSERT INTO deck (user_id, card_id) VALUES (?, ?)", (user_id, card_id))
+
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Erro ao vincular cartas ao deck do usuário: {e}")
+        except ValueError as e:
+            print(e)
+        finally:
+            conn.close()
+
+    def link_cards_to_user(self, user_id, card_ids):
+        try:
+            conn = sqlite3.connect(self.database)
+            c = conn.cursor()
+
+            for card_id in card_ids:
+                c.execute("INSERT INTO client_id_card_id (user_id, card_id) VALUES (?, ?)", (user_id, card_id))
+
+            conn.commit()
+            self.link_cards_to_deck(user_id)
+        except sqlite3.Error as e:
+            print(f"Erro ao vincular cartas ao usuário: {e}")
+
     def create_user(self, name):
         try:
             conn = sqlite3.connect(self.database)
@@ -104,9 +132,16 @@ class ClientModel:
             c.execute("SELECT id FROM client WHERE name = ?", (name,))
             user_id = c.fetchone()[0]
 
-            ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+            ids = [1, 2, 3, 4, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+            fixed_ids = [5, 6, 7, 8, 9, 10]
 
-            card_ids = random.sample(ids, 10)
+            # Seleciona aleatoriamente IDs suficientes para completar 10 no total
+            remaining_ids = random.sample(ids, 10 - len(fixed_ids))
+
+            # Combina os IDs fixos com os aleatórios
+            card_ids = fixed_ids + remaining_ids
+
+            # Agora você pode associar esses IDs ao usuário
             self.link_cards_to_user(user_id, card_ids)
 
             return user_id
@@ -142,17 +177,17 @@ class ClientModel:
         finally:
             conn.close()
 
-    def remove_card_from_deck(self, user_id, card_name):
+    def remove_card_from_deck(self, user_id, card_id):
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
 
             # Obter o ID da carta com base no nome
-            c.execute("SELECT id FROM cards WHERE name = ?", (card_name,))
+            c.execute("SELECT id FROM cards WHERE id = ?", (card_id,))
             result = c.fetchone()
 
             if result is None:
-                print(f"Carta com nome '{card_name}' não encontrada.")
+                print(f"Carta com nome '{card_id}' não encontrada.")
                 return
 
             card_id = result[0]

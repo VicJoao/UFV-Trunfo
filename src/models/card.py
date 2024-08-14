@@ -83,7 +83,7 @@ class Card:
             card_image = self.write_text_on_image(card_image, str(self.get_appearance()), (208, 405), 15, color="W")
 
             # Resize image
-            card_image = card_image.resize((150, int(card_image.height * (150 / card_image.width))))
+            card_image = card_image.resize((200, int(card_image.height * (200 / card_image.width))))
             return card_image
 
         except Exception as e:

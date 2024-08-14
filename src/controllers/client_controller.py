@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox
 
+from PIL import ImageTk
+
 from models.client_model import ClientModel
 from models.user import User
 from controllers.client_connection import ServerScanner
@@ -8,23 +10,28 @@ from controllers.client_connection import ServerScanner
 
 def get_card_attributes():
     while True:
-        attributes = {
-            "Inteligência": simpledialog.askinteger("Atributo da Carta", "Insira Inteligência (0-10):", minvalue=0, maxvalue=10),
-            "Carisma": simpledialog.askinteger("Atributo da Carta", "Insira Carisma (0-10):", minvalue=0, maxvalue=10),
-            "Esporte": simpledialog.askinteger("Atributo da Carta", "Insira Esporte (0-10):", minvalue=0, maxvalue=10),
-            "Humor": simpledialog.askinteger("Atributo da Carta", "Insira Humor (0-10):", minvalue=0, maxvalue=10),
-            "Criatividade": simpledialog.askinteger("Atributo da Carta", "Insira Criatividade (0-10):", minvalue=0, maxvalue=10),
-            "Aparência": simpledialog.askinteger("Atributo da Carta", "Insira Aparência (0-10):", minvalue=0, maxvalue=10)
-        }
+        attributes = {}
+        total = 0
+        for attr in ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência"]:
+            value = simpledialog.askinteger(
+                "Atributo da Carta",
+                f"Insira {attr} (0-10):\n\nSoma atual dos atributos: {total}/30",
+                minvalue=0, maxvalue=10
+            )
 
-        # Calcula a soma dos atributos
-        total = sum(attributes.values())
+            # Verifica se o usuário clicou em "Cancelar" ou fechou a janela
+            if value is None:
+                return None
+
+            attributes[attr] = value
+            total += value
 
         # Verifica se a soma total está dentro do limite
         if total <= 30:
             break
         else:
-            messagebox.showerror("Erro", f"A soma dos atributos é {total}, mas deve ser no máximo 30. Por favor, insira os valores novamente.")
+            messagebox.showerror("Erro",
+                                 f"A soma dos atributos é {total}, mas deve ser no máximo 30. Por favor, insira os valores novamente.")
 
     return [attributes[key] for key in ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência"]]
 
@@ -101,6 +108,8 @@ class ClientController:
 
     def show_server_scanner(self):
         self.menu_frame.pack_forget()
+        # Recria o ServerScanner
+        self.server_scanner = ServerScanner(self.root)
         self.server_scanner.frame.pack()
         self.server_scanner.start_scanning()  # Inicia o escaneamento de servidores
 
@@ -153,60 +162,254 @@ class ClientController:
     def display_user_cards(self):
         cards = self.user.get_cards()
         if not cards:
-            messagebox.showinfo("Info", "No cards available.")
+            tk.messagebox.showinfo("Info", "No cards available.")
             return
 
-        card_info = "\n".join(
-            f"ID: {card.id}\n"
-            f"Name: {card.name}\n"
-            f"  Intelligence: {card.intelligence}\n"
-            f"  Charisma: {card.charisma}\n"
-            f"  Sport: {card.sport}\n"
-            f"  Humor: {card.humor}\n"
-            f"  Creativity: {card.creativity}\n"
-            f"  Appearance: {card.appearance}\n"
-            f"{'-' * 20}"
-            for card in cards
-        )
-        messagebox.showinfo("Cards", card_info)
+        # Destroy any previous content in the root window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Create a frame to hold the cards
+        self.display_cards_frame = tk.Frame(self.root)
+        self.display_cards_frame.pack(expand=True, fill=tk.BOTH)
+
+        # Create a canvas to display the cards
+        canvas = tk.Canvas(self.display_cards_frame, bg="white")
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Add a scrollbar to the canvas
+        scrollbar = tk.Scrollbar(self.display_cards_frame, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Configure the canvas to work with the scrollbar
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        # Create a frame inside the canvas to hold the card information
+        card_frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=card_frame, anchor="nw")
+
+        # Center the card_frame within the canvas
+        card_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        # Define the number of columns per row
+        columns_per_row = 8
+        row = 0
+        col = 0
+
+        for index, card in enumerate(cards):
+            # Generate card image (or use a placeholder)
+            card_img = card.gen_card_img()  # Substitua com o método apropriado para obter a imagem da carta
+            img = ImageTk.PhotoImage(card_img)
+
+            # Create label to show the card's image
+            card_label = tk.Label(card_frame, image=img, padx=10, pady=10)
+            card_label.image = img  # Keep a reference to avoid garbage collection
+
+            # Place the card label in the grid
+            card_label.grid(row=row, column=col, padx=5, pady=5)
+
+            # Move to the next column
+            col += 1
+
+            # Move to the next row after every `columns_per_row` cards
+            if col >= columns_per_row:
+                col = 0
+                row += 1
+
+        # Create a button to return to the menu with increased size
+        back_button = tk.Button(self.display_cards_frame, text="Back to Menu", command=self.return_to_menu, width=26,
+                                height=2)
+        back_button.pack(pady=10, side=tk.BOTTOM)
+
+        # Set the window to full screen
+        self.root.attributes("-fullscreen", True)
+        self.root.update_idletasks()
+
+        # Set the window title
+        self.root.title("Cartas do Usuário")
+
+    def return_to_menu(self):
+        # Destroy the current content frame to clear the cards display
+        if hasattr(self, 'display_deck_frame'):
+            self.display_deck_frame.destroy()
+        if hasattr(self, 'display_cards_frame'):
+            self.display_cards_frame.destroy()
+
+        # Recreate the menu frame and widgets
+        self.menu_frame = tk.Frame(self.root)
+        self.menu_frame.pack(expand=True, fill=tk.BOTH)
+
+        self.create_widgets()  # Recreate widgets for the menu
+
+        # Reset the window to default size
+        self.root.attributes("-fullscreen", False)
+        self.root.update_idletasks()
+
+        # Set the window title
+        self.root.title("Client Manager")
 
     def edit_deck_dialog(self):
-        option = simpledialog.askinteger("Edit Deck",
-                                         "Enter option:\n0 - Return to menu\n1 - Add card to deck\n2 - Remove card "
-                                         "from deck\n3 - Print deck")
-        if option == 0:
+        # Cria uma nova janela para editar o deck
+        edit_deck_window = tk.Toplevel(self.root)
+        edit_deck_window.title("Edit Deck")
+
+        # Cria um label explicativo
+        label = tk.Label(edit_deck_window, text="Escolha uma opção:")
+        label.pack(pady=10)
+
+        # Define as funções dos botões
+        def return_to_menu():
+            edit_deck_window.destroy()
             self.user_menu_frame.pack_forget()
             self.menu_frame.pack()
-        elif option == 1:
+
+        def add_card_to_deck():
+            edit_deck_window.destroy()
             self.add_card_to_deck()
-        elif option == 2:
+
+        def remove_card_from_deck():
+            edit_deck_window.destroy()
             self.remove_card_from_deck()
-        elif option == 3:
+
+        def print_deck():
+            edit_deck_window.destroy()
             self.display_user_deck()
-        else:
-            messagebox.showinfo("Info", "Returning to menu.")
+
+        # Cria botões para cada opção
+        btn_return = tk.Button(edit_deck_window, text="Return to Menu", command=return_to_menu, width=20, height=2)
+        btn_return.pack(pady=5)
+
+        btn_add = tk.Button(edit_deck_window, text="Add Card to Deck", command=add_card_to_deck, width=20, height=2)
+        btn_add.pack(pady=5)
+
+        btn_remove = tk.Button(edit_deck_window, text="Remove Card from Deck", command=remove_card_from_deck, width=20,
+                               height=2)
+        btn_remove.pack(pady=5)
+
+        btn_print = tk.Button(edit_deck_window, text="Print Deck", command=print_deck, width=20, height=2)
+        btn_print.pack(pady=5)
+
+        # Define o tamanho da nova janela
+        edit_deck_window.geometry("400x300")
+
+    import tkinter as tk
+    from tkinter import messagebox
+    from PIL import ImageTk
 
     def add_card_to_deck(self):
-        self.display_user_cards()
-        card_option = simpledialog.askinteger("Add Card to Deck", "Enter card option:")
-        self.add_card_to_deck_op(card_option)
-        messagebox.showinfo("Info", "Card added to deck.")
+        # Cria uma nova janela para exibir as cartas em tela cheia
+        card_selection_window = tk.Toplevel(self.root)
+        card_selection_window.title("Select a Card to Add to Deck")
 
-    def remove_card_from_deck(self):
-        self.display_user_deck()
-        card_option = simpledialog.askinteger("Remove Card from Deck", "Enter card option:")
-        self.remove_card_from_deck_op(card_option)
-        messagebox.showinfo("Info", "Card removed from deck.")
+        # Ajusta o tamanho da janela para tela cheia
+        card_selection_window.attributes("-fullscreen", True)
 
-    def add_card_to_deck_op(self, card_option):
-        if card_option is not None:
-            self.client_model.add_card_to_deck(self.user.id, card_option)
+        # Cria um canvas e uma scrollbar para a nova janela
+        canvas = tk.Canvas(card_selection_window, bg="white")
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar = tk.Scrollbar(card_selection_window, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Cria um frame dentro do canvas para exibir as cartas
+        card_frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=card_frame, anchor="nw")
+
+        # Ajusta a área de rolagem do canvas quando o frame é redimensionado
+        card_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        # Define o número de colunas por linha
+        columns_per_row = 8
+        row = 0
+        col = 0
+
+        def on_card_click(card_id):
+            self.add_card_to_deck_op(card_id)
+            card_selection_window.destroy()
+            messagebox.showinfo("Info", "Card added to deck.")
+
+        for index, card in enumerate(self.user.get_cards()):
+            # Gere a imagem da carta (ou use um placeholder)
+            card_img = card.gen_card_img()  # Substitua com o método apropriado para obter a imagem da carta
+            img = ImageTk.PhotoImage(card_img)
+
+            # Cria um botão para cada carta e define o cursor como uma mão
+            card_button = tk.Button(card_frame, image=img, padx=10, pady=10, cursor="hand2",
+                                    command=lambda id=card.id: on_card_click(id))
+            card_button.image = img  # Mantenha uma referência para evitar coleta de lixo
+
+            # Posiciona o botão no grid
+            card_button.grid(row=row, column=col, padx=5, pady=5)
+
+            col += 1
+            if col >= columns_per_row:
+                col = 0
+                row += 1
+
+    def add_card_to_deck_op(self, card_id):
+        if card_id is not None:
+            self.client_model.add_card_to_deck(self.user.id, card_id)
             self.user.initialize(self.client_model.get_user_cards(self.user.id),
                                  self.client_model.get_user_deck(self.user.id))
 
-    def remove_card_from_deck_op(self, card_option):
-        if card_option is not None:
-            self.client_model.remove_card_from_deck(self.user.id, card_option)
+    def remove_card_from_deck(self):
+        # Cria uma nova janela para exibir as cartas em tela cheia
+        card_selection_window = tk.Toplevel(self.root)
+        card_selection_window.title("Select a Card to Remove from Deck")
+
+        # Ajusta o tamanho da janela para tela cheia
+        card_selection_window.attributes("-fullscreen", True)
+
+        # Cria um canvas e uma scrollbar para a nova janela
+        canvas = tk.Canvas(card_selection_window, bg="white")
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar = tk.Scrollbar(card_selection_window, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Cria um frame dentro do canvas para exibir as cartas
+        card_frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=card_frame, anchor="nw")
+
+        # Ajusta a área de rolagem do canvas quando o frame é redimensionado
+        card_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        # Define o número de colunas por linha
+        columns_per_row = 8
+        row = 0
+        col = 0
+
+        def on_card_click(card_id):
+            self.remove_card_from_deck_op(card_id)
+            card_selection_window.destroy()
+            messagebox.showinfo("Info", "Card removed from deck.")
+
+        for index, card in enumerate(self.user.get_deck().get_cards()):
+            # Gere a imagem da carta (ou use um placeholder)
+            card_img = card.gen_card_img()  # Substitua com o método apropriado para obter a imagem da carta
+            img = ImageTk.PhotoImage(card_img)
+
+            # Cria um botão para cada carta e define o cursor como uma mão
+            card_button = tk.Button(card_frame, image=img, padx=10, pady=10, cursor="hand2",
+                                    command=lambda id=card.id: on_card_click(id))
+            card_button.image = img  # Mantenha uma referência para evitar coleta de lixo
+
+            # Posiciona o botão no grid
+            card_button.grid(row=row, column=col, padx=5, pady=5)
+
+            col += 1
+            if col >= columns_per_row:
+                col = 0
+                row += 1
+
+    def remove_card_from_deck_op(self, card_id):
+        if card_id is not None:
+            self.client_model.remove_card_from_deck(self.user.id, card_id)
             self.user.initialize(self.client_model.get_user_cards(self.user.id),
                                  self.client_model.get_user_deck(self.user.id))
 
@@ -221,19 +424,69 @@ class ClientController:
             messagebox.showinfo("Deck", "Deck is empty.")
             return
 
-        deck_info = "\n".join(
-            f"ID : {card.id}\n"
-            f"Name: {card.name}\n"
-            f"  Intelligence: {card.intelligence}\n"
-            f"  Charisma: {card.charisma}\n"
-            f"  Sport: {card.sport}\n"
-            f"  Humor: {card.humor}\n"
-            f"  Creativity: {card.creativity}\n"
-            f"  Appearance: {card.appearance}\n"
-            f"{'-' * 20}"
-            for card in cards
-        )
-        messagebox.showinfo("Deck", deck_info)
+        # Destroy any previous content in the root window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Create a frame to hold the cards
+        self.display_deck_frame = tk.Frame(self.root)
+        self.display_deck_frame.pack(expand=True, fill=tk.BOTH)
+
+        # Create a canvas to display the cards
+        canvas = tk.Canvas(self.display_deck_frame, bg="white")
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Add a scrollbar to the canvas
+        scrollbar = tk.Scrollbar(self.display_deck_frame, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Configure the canvas to work with the scrollbar
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        # Create a frame inside the canvas to hold the card information
+        card_frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=card_frame, anchor="nw")
+
+        # Center the card_frame within the canvas
+        card_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        # Define the number of columns per row
+        columns_per_row = 8
+        row = 0
+        col = 0
+
+        for index, card in enumerate(cards):
+            # Generate card image (or use a placeholder)
+            card_img = card.gen_card_img()  # Substitua com o método apropriado para obter a imagem da carta
+            img = ImageTk.PhotoImage(card_img)
+
+            # Create a label to show the card's image
+            card_label = tk.Label(card_frame, image=img, padx=10, pady=10)
+            card_label.image = img  # Keep a reference to avoid garbage collection
+
+            # Place the card label in the grid
+            card_label.grid(row=row, column=col, padx=5, pady=5)
+
+            # Move to the next column
+            col += 1
+
+            # Move to the next row after every `columns_per_row` cards
+            if col >= columns_per_row:
+                col = 0
+                row += 1
+
+        # Create a button to return to the menu with increased size
+        back_button = tk.Button(self.display_deck_frame, text="Back to Menu", command=self.return_to_menu, width=26,
+                                height=2)
+        back_button.pack(pady=10, side=tk.BOTTOM)
+
+        # Set the window to full screen
+        self.root.attributes("-fullscreen", True)
+        self.root.update_idletasks()
+
+        # Set the window title
+        self.root.title("Deck do Usuário")
 
     def run(self):
         self.root.mainloop()

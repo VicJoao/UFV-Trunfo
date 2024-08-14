@@ -105,11 +105,8 @@ class ClientController:
 
         self.exit_user_button = tk.Button(self.user_menu_frame, text="Exit", command=self.root.quit)
         self.exit_user_button.pack()
-
     def show_server_scanner(self):
         self.menu_frame.pack_forget()
-        # Recria o ServerScanner
-        self.server_scanner = ServerScanner(self.root)
         self.server_scanner.frame.pack()
         self.server_scanner.start_scanning()  # Inicia o escaneamento de servidores
 
@@ -165,9 +162,8 @@ class ClientController:
             tk.messagebox.showinfo("Info", "No cards available.")
             return
 
-        # Destroy any previous content in the root window
-        for widget in self.root.winfo_children():
-            widget.destroy()
+        # Hide the menu frame
+        self.menu_frame.pack_forget()
 
         # Create a frame to hold the cards
         self.display_cards_frame = tk.Frame(self.root)
@@ -199,7 +195,7 @@ class ClientController:
 
         for index, card in enumerate(cards):
             # Generate card image (or use a placeholder)
-            card_img = card.gen_card_img()  # Substitua com o método apropriado para obter a imagem da carta
+            card_img = card.gen_card_img()  # Replace with the appropriate method to get the card image
             img = ImageTk.PhotoImage(card_img)
 
             # Create label to show the card's image
@@ -226,28 +222,19 @@ class ClientController:
         self.root.attributes("-fullscreen", True)
         self.root.update_idletasks()
 
-        # Set the window title
-        self.root.title("Cartas do Usuário")
-
     def return_to_menu(self):
-        # Destroy the current content frame to clear the cards display
+        # Hide the content frames but do not destroy the menu frame
         if hasattr(self, 'display_deck_frame'):
-            self.display_deck_frame.destroy()
+            self.display_deck_frame.pack_forget()
         if hasattr(self, 'display_cards_frame'):
-            self.display_cards_frame.destroy()
+            self.display_cards_frame.pack_forget()
 
-        # Recreate the menu frame and widgets
-        self.menu_frame = tk.Frame(self.root)
+        # Show the menu frame
         self.menu_frame.pack(expand=True, fill=tk.BOTH)
-
-        self.create_widgets()  # Recreate widgets for the menu
 
         # Reset the window to default size
         self.root.attributes("-fullscreen", False)
         self.root.update_idletasks()
-
-        # Set the window title
-        self.root.title("Client Manager")
 
     def edit_deck_dialog(self):
         # Cria uma nova janela para editar o deck
@@ -416,17 +403,16 @@ class ClientController:
     def display_user_deck(self):
         deck = self.user.get_deck()
         if not deck:
-            messagebox.showinfo("Deck", "Deck not found.")
+            tk.messagebox.showinfo("Deck", "Deck not found.")
             return
 
         cards = deck.get_cards()
         if not cards:
-            messagebox.showinfo("Deck", "Deck is empty.")
+            tk.messagebox.showinfo("Deck", "Deck is empty.")
             return
 
-        # Destroy any previous content in the root window
-        for widget in self.root.winfo_children():
-            widget.destroy()
+        # Hide the menu frame
+        self.menu_frame.pack_forget()
 
         # Create a frame to hold the cards
         self.display_deck_frame = tk.Frame(self.root)
@@ -458,10 +444,10 @@ class ClientController:
 
         for index, card in enumerate(cards):
             # Generate card image (or use a placeholder)
-            card_img = card.gen_card_img()  # Substitua com o método apropriado para obter a imagem da carta
+            card_img = card.gen_card_img()  # Replace with the appropriate method to get the card image
             img = ImageTk.PhotoImage(card_img)
 
-            # Create a label to show the card's image
+            # Create label to show the card's image
             card_label = tk.Label(card_frame, image=img, padx=10, pady=10)
             card_label.image = img  # Keep a reference to avoid garbage collection
 

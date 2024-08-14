@@ -292,15 +292,14 @@ class ServerScanner:
     def win_card(self):
         print("--------ESCOLHA UMA CARTA PARA GANHAR--------")
 
-        # Destroy the existing frame if it exists
-        if hasattr(self, 'win_card_frame') and self.win_card_frame.winfo_exists():
-            print("Destroying existing win_card_frame")
-            self.win_card_frame.destroy()
-        else:
-            print("No existing win_card_frame to destroy")
+        # Create a new top-level window
+        self.win_card_window = tk.Toplevel(self.root)
+        self.win_card_window.title("Escolha uma Carta")
+        self.win_card_window.attributes("-fullscreen", True)
+        self.win_card_window.grab_set()  # Make the new window modal
 
-        # Create a new frame for winning card selection
-        self.win_card_frame = tk.Frame(self.root)
+        # Create a frame for winning card selection within the new window
+        self.win_card_frame = tk.Frame(self.win_card_window)
         self.win_card_frame.pack(expand=True, fill=tk.BOTH)  # Expand the frame to fill the window
         print("New win_card_frame created and packed")
 
@@ -349,16 +348,12 @@ class ServerScanner:
         self.win_card_frame.grid_columnconfigure(tuple(range(top_row_cols)), weight=1)
         self.win_card_frame.grid_columnconfigure(tuple(range(bottom_row_cols)), weight=1)
 
-        # Set the window to full screen
-        self.root.attributes("-fullscreen", True)
-        self.root.update_idletasks()  # Ensure the window has been fully rendered
-
-        # Set the window title for the win card screen
-        self.root.title("Escolha uma Carta")
+        # Ensure the window has been fully rendered
+        self.win_card_window.update_idletasks()
         print("Window title set to 'Escolha uma Carta'")
 
         # Wait for card selection before proceeding
-        self.root.after(100, self.check_selection)
+        self.win_card_window.after(100, self.check_selection)
 
     def select_card(self, index):
         self.selected_card = self.game.board.pile[index]

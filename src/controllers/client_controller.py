@@ -1,7 +1,7 @@
 import tkinter as tk
-from tkinter import simpledialog, messagebox
+from tkinter import simpledialog, messagebox, filedialog
 
-from PIL import ImageTk
+from PIL import ImageTk, Image
 
 from models.client_model import ClientModel
 from models.user import User
@@ -28,12 +28,33 @@ def get_card_attributes():
 
         # Verifica se a soma total está dentro do limite
         if total <= 30:
+            # Verifica se o usuário deseja adicionar uma imagem à carta
+            if messagebox.askyesno("Imagem", "Deseja adicionar uma imagem à carta?"):
+                img_path = upload_image()
+                attributes["Imagem"] = img_path
             break
         else:
             messagebox.showerror("Erro",
                                  f"A soma dos atributos é {total}, mas deve ser no máximo 30. Por favor, insira os valores novamente.")
 
-    return [attributes[key] for key in ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência"]]
+    return [attributes[key] for key in ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência", "Imagem"]]
+
+
+def upload_image():
+    file_path = filedialog.askopenfilename(
+        title="Selecione uma imagem",
+        filetypes=[("Image files", "*.jpg *.jpeg *.png")]
+    )
+    if file_path:
+        return file_path
+
+        # try:
+        #     # img = Image.open(file_path)
+        #     # img.thumbnail((200, 200))  # Redimensiona a imagem para caber na janela
+        #     # return ImageTk.PhotoImage(img)
+        #
+        # except Exception as e:
+        #     messagebox.showerror("Erro", f"Não foi possível abrir a imagem: {str(e)}")
 
 
 class ClientController:

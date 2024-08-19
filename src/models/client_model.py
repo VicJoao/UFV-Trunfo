@@ -243,7 +243,7 @@ class ClientModel:
                          FROM cards
                          JOIN deck ON cards.id = deck.card_id
                          WHERE deck.user_id = ?''', (user_id,))
-            deck_cards = [Card(card[0], card[1], card[2], card[3], card[4], card[5], card[6], card[7]) for card in
+            deck_cards = [Card(card[0], card[1], card[2], card[3], card[4], card[5], card[6], card[7], card[8]) for card in
                           c.fetchall()]
 
             deck = Deck()
@@ -260,13 +260,13 @@ class ClientModel:
             c = conn.cursor()
 
             # Atualizar a consulta SQL conforme a estrutura da tabela cards
-            c.execute('''SELECT id, name, intelligence, charisma, sport, humor, creativity, appearance 
+            c.execute('''SELECT id, name, intelligence, charisma, sport, humor, creativity, appearance, image_path
                          FROM cards
                          JOIN client_id_card_id ON cards.id = client_id_card_id.card_id
                          WHERE client_id_card_id.user_id = ?''', (user_id,))
 
             # Supondo que a tabela cards não tem user_id e as colunas estão na ordem correta
-            cards = [Card(card[0], card[1], card[2], card[3], card[4], card[5], card[6], card[7]) for card in
+            cards = [Card(card[0], card[1], card[2], card[3], card[4], card[5], card[6], card[7], card[8]) for card in
                      c.fetchall()]
             return cards
         except sqlite3.Error as e:

@@ -46,7 +46,8 @@ class Game:
             card_played.sport,
             card_played.humor,
             card_played.creativity,
-            card_played.appearance
+            card_played.appearance,
+            card_played.image_path
         )
 
         # Marca a carta como removida (ou inativa) definindo seus atributos como 0

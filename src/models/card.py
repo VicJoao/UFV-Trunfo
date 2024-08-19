@@ -14,10 +14,10 @@ IMG = pygame.image.load(image_path)
 
 # Get rectangle and size from IMG
 RECT = IMG.get_rect()
-SIZE = IMG.get_size()
+# SIZE = IMG.get_size()
 
 class Card:
-    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance, image="assets/default.jpg", pos=(120, 180)):
+    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance, image=os.path.join("assets", "default.jpg"), pos=(120, 180)):
         self.id = id
         self.name = name
         self.intelligence = self._validate_stat(intelligence, "intelligence")
@@ -26,12 +26,16 @@ class Card:
         self.humor = self._validate_stat(humor, "humor")
         self.creativity = self._validate_stat(creativity, "creativity")
         self.appearance = self._validate_stat(appearance, "appearance")
+        self.selfie = image
+        self.selfie_img = pygame.image.load(image)
+        self.selfie_rect = self.selfie_img.get_rect()
+        # self.selfie_size = self.selfie_img.get_size()
 
     def get_card_pos(self):
-        return RECT.center
+        return self.selfie_rect.center
 
     def set_card_pos(self, pos):
-        RECT.center = pos
+        self.selfie_rect.center = pos
 
     def gen_card_img(self):
         try:
@@ -47,9 +51,10 @@ class Card:
             print(f"Card image shape: {card_arr.shape}")
             print(f"Name tag shape: {name_tag_arr.shape}")
 
-            if IMG is not None:
+            if self.selfie_img is not None:
+                print("Selfie image is: ", self.selfie)
                 # Convert Pygame image to PIL and ensure RGBA format
-                selfie_image = self.crop_picture(self.pygame_to_pil(IMG)).convert("RGBA")
+                selfie_image = self.crop_picture(self.pygame_to_pil(self.selfie_img)).convert("RGBA")
 
                 # Convert selfie to numpy array
                 selfie_arr = np.asarray(selfie_image)
@@ -69,7 +74,7 @@ class Card:
                 card_arr_copy = self.overlay_images(card_arr_copy, name_tag_arr)
                 card_image = Image.fromarray(card_arr_copy, mode="RGBA")
             else:
-                # If IMG is None, just use the card image and name tag
+                # If self.selfie_img is None, just use the card image and name tag
                 card_image = Image.fromarray(card_arr, mode="RGBA")
                 card_image = Image.fromarray(self.overlay_images(np.asarray(card_image), name_tag_arr), mode="RGBA")
 
@@ -184,7 +189,7 @@ class Card:
         plt.show()
 
     def show(self):
-        img_arr = np.asarray(self.pygame_to_pil(IMG))
+        img_arr = np.asarray(self.pygame_to_pil(self.selfie_img))
         self.show_img_from_arr(img_arr)
 
     def overlay_images(self, background_arr, overlay_arr, top=0, left=0):

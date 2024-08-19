@@ -46,7 +46,15 @@ def upload_image():
         filetypes=[("Image files", "*.jpg *.jpeg *.png")]
     )
     if file_path:
-        return file_path
+        # Abre a imagem
+        img = Image.open(file_path)
+
+        # Salva a imagem na pasta assets
+        # @TODO: Seria interessante verificar se a pasta existe, bem como se alguma imagem com o mesmo nome já existe
+        new_file_path = "assets/" + file_path.split("/")[-1]
+        img.save(new_file_path)
+
+        return new_file_path
 
         # try:
         #     # img = Image.open(file_path)

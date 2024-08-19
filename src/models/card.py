@@ -171,7 +171,10 @@ class Card:
         new_width, new_height = 200, 200
 
         width, height = img.size
-        img = img.resize((200, int(height * (200 / width))))
+        if width > height:
+            img = img.resize((int(width * (200 / height)), 200))
+        else:
+            img = img.resize((200, int(height * (200 / width))))
 
         width, height = img.size
 

@@ -10,12 +10,12 @@ from PIL import ImageTk
 
 import Pyro5.api
 
-
 from models.client_model import ClientModel
+from models.deck import Deck
 from models.game import Game
 from models.message import Message
 
-
+@Pyro5.api.expose
 
 class ServerScanner:
     def __init__(self, root):
@@ -34,6 +34,10 @@ class ServerScanner:
         self.original_indices = []
         self.selected_card = None
         self.atributo_atual = ''
+        self.server_proxy = None
+        self.client_id = "client1"
+        self.status_queue = []
+
 
         # Tkinter
         self.frame = tk.Frame(root)
@@ -61,9 +65,9 @@ class ServerScanner:
         self.disconnect_button.pack(pady=5)
         self.disconnect_button.config(state=tk.DISABLED)
 
-    def atribute_user_id(self, user_id):
-        self.bd_id = user_id
+        self.connect_client_to_daemon()
 
+    # Funções do Tkinter
     def show_game(self):
         if self.frame and self.frame.winfo_exists():
             self.frame.destroy()
@@ -103,30 +107,86 @@ class ServerScanner:
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
 
-    def scan_for_servers(self):
-        # Utiliza o Name Server do Pyro para descobrir servidores
-        try:
-            with Pyro5.api.Proxy("PYRONAME:Pyro.NameServer") as ns:
-                # Recupera todos os objetos registrados
-                print("Escaneando servidores...")
-                objects = ns.list()
-                print(f"Objetos encontrados: {objects}")
-                for name, uri in objects.items():
-                    print(f"Verificando objeto {name}...")
-                    if not self.is_scanning:
-                        break
-                    # Adiciona os servidores encontrados à lista
-                    print(f"Adicionando servidor {name} à lista...")
-                    self.servers[name] = uri
-                    self.root.after(0, lambda: self.update_server_list(name))
-        except Exception as e:
-            print(f"Erro ao escanear servidores: {e}")
-
     def update_server_list(self, server_name):
+        print(f"Adicionando servidor {server_name} à lista...")
         self.server_listbox.insert(tk.END, server_name)
         self.connect_button.config(state=tk.NORMAL)
 
+    def update_status(self, message):
+        self.server_listbox.delete(0, tk.END)
+        self.server_listbox.insert(tk.END, message)
+        return True
+
+
+
+    '''
+    Pyro5 API
+    
+    Funções:
+    
+    - connect_client_to_deamon: Conecta o cliente ao daemon Pyro5
+    - atribute_user_id: Atribui o ID do usuário ao objeto
+    - scan_for_servers: Escaneia os servidores disponíveis
+    - connect_to_server: Conecta-se a um servidor
+    - connect_to_host: Conecta-se ao host
+    - start_countdown: Inicia a contagem regressiva
+    
+    - handle_server_messages: Lida com as mensagens do servidor
+    
+    
+    '''
+
+    def connect_client_to_daemon(self):
+        """Conecta o cliente ao daemon Pyro5."""
+        daemon = Pyro5.api.Daemon()  # Cria uma instância do daemon
+        # Registra o cliente no daemon
+        client_uri = daemon.register(self)
+        print(f"URI do cliente: {client_uri}")
+
+        # Registra o cliente no Name Server
+        name_server = Pyro5.api.locate_ns()
+
+        # gera um id de random
+
+        import random
+
+        self.client_id = random.randint(1, 1000)
+        cliente_name_server = "Cliente" + str(self.client_id)
+
+        name_server.register(cliente_name_server, client_uri)
+
+        print("Cliente registrado no Name Server")
+        print("Cliente pronto. Aguardando mensagens...")
+
+        # Inicia o daemon em uma thread separada
+        def run_daemon():
+            daemon.requestLoop()
+
+        threading.Thread(target=run_daemon, daemon=True).start()
+
+    def atribute_user_id(self, user_id):
+        self.bd_id = user_id
+
+    def scan_for_servers(self):
+        """Utiliza o Name Server do Pyro para descobrir servidores."""
+        try:
+            with Pyro5.api.Proxy("PYRONAME:Pyro.NameServer") as ns:
+                print("Escaneando servidores...")
+                objects = ns.list()
+                print(f"Objetos encontrados: {objects}")
+                # Se o name começa com "Server", então é um servidor adiciona à lista
+                for name, uri in objects.items():
+                    if name.startswith("Server"):
+                        self.servers[name] = uri
+                        server_name = name
+                        self.root.after(0, lambda: self.update_server_list(server_name))
+        except Exception as e:
+            print(f"Erro ao escanear servidores: {e}")
+
+
+
     def connect_to_server(self):
+        """Conecta-se ao servidor selecionado."""
         selected_index = self.server_listbox.curselection()
         if not selected_index:
             messagebox.showwarning("Aviso", "Selecione um servidor para conectar.")
@@ -137,59 +197,110 @@ class ServerScanner:
         if uri:
             self.host = uri
             with Pyro5.api.Proxy(uri) as server_proxy:
-                self.handle_server_messages(server_proxy)
+                self.connect_to_host(server_proxy)
 
-    def handle_server_messages(self, server_proxy):
+    def connect_to_host(self, server_proxy):
+        """Inicia a conexão com o servidor."""
+        self.start_countdown(0, server_proxy)
+
+    def start_countdown(self, count, server_proxy):
+        """Exibe uma contagem regressiva antes de conectar-se ao servidor."""
+        if count > 0:
+            self.update_status(f"Conectando ao servidor, aguarde {count} segundos...")
+            self.root.after(1000, self.start_countdown, count - 1, server_proxy)
+        else:
+            # Use uma fila para garantir que o update_status seja chamado antes de finalize_connection
+            self.status_queue.append(lambda: self.update_status("Conexão estabelecida!"))
+            self.status_queue.append(lambda: self.finalize_connection(server_proxy))
+            self.process_status_queue()
+
+    def process_status_queue(self):
+        """Processa a fila de atualizações de status."""
+        if self.status_queue:
+            action = self.status_queue.pop(0)
+            action()
+            self.root.after(100, self.process_status_queue)  # Agendando a próxima ação na fila
+
+    def finalize_connection(self, server_proxy):
+        """Finaliza a conexão com o servidor e realiza registro e comunicação inicial."""
+        try:
+            print("Conectando ao servidor...")
+            response = server_proxy.ping()
+            print(f"Resposta do servidor: {response}")
+            if response == "pong":
+                self.connected = True
+                self.server_proxy = server_proxy  # Guardar a instância do proxy
+                self.stop_scanning()
+                self.send_player_data()
+            else:
+                self.update_status("Conexão falhou. Resposta inesperada do servidor.")
+                self.connected = False
+        except Exception as e:
+            self.update_status(f"Erro durante a conexão: {e}")
+            self.connected = False
+    def set_server_proxy(self, server_proxy):
+        """Define o proxy do servidor."""
+        self.server_proxy = server_proxy
+
+    def send_player_data(self):
+        """Envia os dados do jogador ao servidor."""
+        try:
+            if not self.server_proxy:
+                raise Exception("Não há proxy do servidor disponível.")
+            player_data = {
+                "Nome": self.nome_jogador,
+                "Deck": self.deck
+            }
+            self.server_proxy.send_player_data(player_data)
+            print("Dados do jogador enviados com sucesso.")
+        except Pyro5.errors.PyroError as e:
+            print(f"Erro ao enviar dados do jogador: {e}")
+        except Exception as e:
+            print(f"Erro inesperado: {e}")
+
+    def receive_player_name(self, player_name):
+        """Recebe o nome do jogador de outro cliente."""
+        print(f"Novo jogador entrou: {player_name}")
+        self.players_list.append(player_name)
+
+        # Adiciona a atualização da lista de jogadores na fila
+        self.status_queue.append(self.update_players_listbox)
+
+    def update_players_listbox(self):
+        """Atualiza a Listbox com a lista de jogadores."""
+        self.players_listbox.config(state=tk.NORMAL)
+        self.players_listbox.delete(0, tk.END)
+        for player in self.players_list:
+            self.players_listbox.insert(tk.END, player)
+        self.players_listbox.config(state=tk.DISABLED)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def handle_server_messages(self):
         print("Iniciando a escuta de mensagens do servidor...")
-        while True:
-            try:
-                # Chama métodos no servidor Pyro5 para obter atualizações
-                message = server_proxy.get_message()  # Supondo que o servidor tenha um método `get_message`
+        return True
 
-                if message.message_type == Message.NEW_PLAYER:
-                    self.process_new_player_message(message)
-                elif message.message_type == Message.START_GAME:
-                    players_data = message.data['players_data']
-                    player_id = message.data['player_id']
-                    self.game = Game(players_data, player_id)
-                    self.original_indices = [(index, card) for index, card in enumerate(
-                        copy.deepcopy(self.game.players_hands[self.game.my_id]['hand']))]
-                    self.render_game_screen()
-                elif message.message_type == Message.PLAY:
-                    winner = self.game.play_turn(message.data['plays'], message.data['atribute'])
-                    if winner != -1:
-                        if winner == -2:
-                            pass
-                        else:
-                            print("Vencedor: ", winner)
-                        if self.game.my_id == winner:
-                            messagebox.showinfo("", "Você ganhou! Escolha uma carta para sua coleção:")
-                            self.win_card()
-                        elif winner == -2:
-                            messagebox.showinfo("", "Empate, ninguém ganha nada!")
-                            self.encerrar_partida()
-                        else:
-                            messagebox.showinfo("", "Infelizmente você perdeu!")
-                elif message.message_type == Message.WINNER:
-                    os._exit(0)
-                elif message.message_type == Message.ATRIBUTO:
-                    atributo_ingles = message.data["atribute"]
-                    atributo_dict = {
-                        "intelligence": "Inteligência",
-                        "charisma": "Carisma",
-                        "sport": "Esporte",
-                        "humor": "Humor",
-                        "creativity": "Criatividade",
-                        "appearance": "Aparência"
-                    }
-                    self.atributo_atual = atributo_dict.get(atributo_ingles, "Desconhecido")
-                    time.sleep(1)
-                    messagebox.showinfo("", f"Atributo da rodada: {self.atributo_atual}")
-                else:
-                    print("MENSAGEM NAO CONHECIDA")
-            except Exception as e:
-                print(f"Erro inesperado: {e}")
-                break
 
     def win_card(self):
         print("--------ESCOLHA UMA CARTA PARA GANHAR--------")
@@ -268,7 +379,8 @@ class ServerScanner:
         print(f"Card {index} selected and added to collection")
 
         # Show a message box confirming that the card has been added
-        messagebox.showinfo("Carta Adicionada", f"A carta '{self.selected_card.name}' foi adicionada à coleção. Jogo encerrando...")
+        messagebox.showinfo("Carta Adicionada",
+                            f"A carta '{self.selected_card.name}' foi adicionada à coleção. Jogo encerrando...")
 
         # Optionally, update the UI or clean up
         if hasattr(self, 'win_card_frame') and self.win_card_frame.winfo_exists():
@@ -317,51 +429,6 @@ class ServerScanner:
             self.players_listbox.insert(tk.END, player)
         self.players_listbox.config(state=tk.DISABLED)
 
-    def connect_to_host(self, host):
-        self.start_countdown(3, host)
-
-    def start_countdown(self, count, host):
-        if count > 0:
-            self.update_status(f"Conectando ao servidor, aguarde {count} segundos...")
-            self.root.after(1000, self.start_countdown, count - 1, host)
-        else:
-            self.update_status("Conexão estabelecida!")
-            self.finalize_connection(host)
-
-    def update_status(self, message):
-        self.server_listbox.delete(0, tk.END)
-        self.server_listbox.insert(tk.END, message)
-
-    def finalize_connection(self, host):
-        try:
-            # Conectar-se ao servidor Pyro5
-            server_uri = f"PYRO:example.server@{host}:12345"  # Substitua pelo URI real
-            self.server_proxy = Pyro5.api.Proxy(server_uri)
-
-            # Chamar método remoto para conectar e obter porta
-            self.server_proxy.connect(self.nome_jogador, self.deck, self.porta_de_escuta)
-            COMM_PORT = self.server_proxy.get_comm_port()
-            print(f"Conectado ao servidor {host} na porta {COMM_PORT}")
-
-            self.get_random_free_port()
-
-            threading.Thread(target=self.handle_server_messages, args=(self.porta_de_escuta,), daemon=True).start()
-
-            self.send_player_data()
-        except Pyro5.errors.PyroError as e:
-            messagebox.showerror("Erro", f"Erro ao conectar ao servidor {host}: {e}")
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro inesperado: {e}")
-
-    def send_player_data(self):
-        try:
-            # Enviar dados do jogador ao servidor Pyro5
-            self.server_proxy.send_player_data(self.nome_jogador, self.deck, self.porta_de_escuta)
-            self.show_game()
-        except Pyro5.errors.PyroError as e:
-            messagebox.showerror("Erro", f"Erro ao enviar dados para o servidor: {e}")
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro inesperado: {e}")
 
     def disconnect_from_server(self):
         try:
@@ -458,6 +525,7 @@ class ServerScanner:
         if self.scan_thread:
             self.scan_thread.join()  # Aguardar a thread de escaneamento parar
         # Adicione lógica adicional aqui para parar outras threads, se necessário
+
 
 if __name__ == "__main__":
     root = tk.Tk()

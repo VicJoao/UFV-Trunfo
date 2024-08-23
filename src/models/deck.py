@@ -47,3 +47,13 @@ class Deck:
 
     def set_cards(self, cards):
         self.cards = cards
+
+    def __getstate__(self):
+        # Retorne o estado serializável do objeto (lista de dicionários)
+        return {'cards': [card.__getstate__() for card in self.cards]}
+
+    def __setstate__(self, state):
+        # Restaure o estado do objeto a partir do estado serializado
+        self.cards = [Card(**card_state) for card_state in state['cards']]
+
+

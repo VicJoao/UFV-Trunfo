@@ -1,20 +1,21 @@
 import Pyro5.api
-import random
 import threading
 import time
-import os
+import random
 
 from models.game_data import GameData
 from models.message import Message
 
+
 MAX_CLIENTS = 3
-COMM_PORT_START = 4243
-COMM_PORT_END = COMM_PORT_START + MAX_CLIENTS
-MAX_CLIENTS_PER_PORT = 1
 
 def select_random_attribute():
     attributes = ["intelligence", "charisma", "sport", "humor", "creativity", "appearance"]
     return random.choice(attributes)
+
+
+
+
 
 @Pyro5.api.expose
 class GameServer:
@@ -28,6 +29,9 @@ class GameServer:
         self.plays = []
         self.players_name = []
         self.players_data = []
+        self.clients = []
+        self.players_proxies = []
+        self.clients = []
         self.game_data = GameData()
         self.server_connection_message = []
         self.atributo_da_rodada = ''
@@ -35,16 +39,38 @@ class GameServer:
         print("Servidor de descoberta iniciado")
         self.messages = []
 
-    def start(self):
-        print(f"Servidor de descoberta iniciado")
-        try:
-            threading.Thread(target=self.handle_discovery, daemon=True).start()
-            for port in range(COMM_PORT_START, COMM_PORT_END + 1):
-                threading.Thread(target=self.comunicar_com_clientes, args=(port,), daemon=True).start()
-                print("Servidor iniciado, Aguardando conexões na porta:", port)
-            input("Pressione Enter para encerrar o servidor...")
-        finally:
-            print("Servidor fechado.")
+    def ping(self):
+        ns = Pyro5.api.locate_ns()
+        clients = ns.list(prefix="Client")
+        self.clients = clients.keys()
+        print(f"Clientes conectados: {self.clients}")
+        return "pong"
+
+
+    def send_player_data(self, player_data):
+        """Processa os dados do jogador recebidos do cliente."""
+        print(f"Dados do jogador recebidos: {player_data}")
+
+        self.send_message_to_clients(player_data["Nome"])
+
+    def send_message_to_clients(self, message):
+        print(f"Enviando mensagem para todos os clientes: {message}")
+        """Envia uma mensagem para todos os clientes conectados."""
+
+        for client in self.clients:
+            try:
+                print(f"Enviando mensagem para {client}")
+                client_proxy = Pyro5.api.Proxy(f"PYRONAME:{client}")
+                client_proxy.receive_player_name(message)
+            except Pyro5.errors.PyroError as e:
+                print(f"Erro ao enviar mensagem para o cliente: {e}")
+
+
+
+
+
+
+
 
     def handle_discovery(self):
         while True:
@@ -55,12 +81,7 @@ class GameServer:
         # Placeholder: Implement client communication logic here if needed
         pass
 
-    def get_available_port(self):
-        with self.lock:
-            for port in range(COMM_PORT_START, COMM_PORT_END + 1):
-                if port not in self.porta_receber_cliente.values():
-                    return port
-        return None
+    
 
     def disconnect(self, client_ip, player_port):
         with self.lock:
@@ -88,8 +109,8 @@ class GameServer:
 
     # Define outros métodos que você usaria para processar mensagens, similar aos métodos no código original
 
-def main():
 
+def main():
     # Cria uma instância do servidor
     server = GameServer()
 
@@ -101,12 +122,13 @@ def main():
 
     # (Opcional) Registra o servidor no Nameserver
     ns = Pyro5.api.locate_ns()  # Localiza o Nameserver
-    ns.register("example.game_server", uri)  # Registra o servidor no Nameserver
+    ns.register("Server", uri)  # Registra o servidor no Nameserver
 
     print(f"Server está rodando com URI: {uri}")
 
     # Mantém o daemon em execução para processar as requisições dos clientes
     daemon.requestLoop()
+
 
 if __name__ == "__main__":
     main()

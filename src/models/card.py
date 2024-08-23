@@ -218,3 +218,28 @@ class Card:
             draw.text((x, y), text, font=font, fill=(0, 0, 0, 255))
 
         return image
+
+    def __getstate__(self):
+        # Inclua todos os atributos necessários para a serialização
+        return {
+            'id': self.id,
+            'name': self.name,
+            'intelligence': self.intelligence,
+            'charisma': self.charisma,
+            'sport': self.sport,
+            'humor': self.humor,
+            'creativity': self.creativity,
+            'appearance': self.appearance
+        }
+
+    def __setstate__(self, state):
+        # Restaura o estado do objeto a partir do estado serializado
+        self.id = state['id']
+        self.name = state['name']
+        self.intelligence = state['intelligence']
+        self.charisma = state['charisma']
+        self.sport = state['sport']
+        self.humor = state['humor']
+        self.creativity = state['creativity']
+        self.appearance = state['appearance']
+

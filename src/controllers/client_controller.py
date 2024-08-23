@@ -5,7 +5,7 @@ from PIL import ImageTk
 
 from models.client_model import ClientModel
 from models.user import User
-from controllers.client_connection import ServerScanner
+from client_pyro import ServerScanner
 
 
 def get_card_attributes():
@@ -61,7 +61,7 @@ class ClientController:
         self.root.title("Client Manager")
 
         # Inicializa o Scanner de Servidores
-        self.server_scanner = ServerScanner(self.root, )
+        self.server_scanner = ServerScanner(self.root,)
         self.server_scanner.frame.pack_forget()  # Oculta a tela de escaneamento por padrão
 
         self.create_widgets()
@@ -279,10 +279,6 @@ class ClientController:
 
         # Define o tamanho da nova janela
         edit_deck_window.geometry("400x300")
-
-    import tkinter as tk
-    from tkinter import messagebox
-    from PIL import ImageTk
 
     def add_card_to_deck(self):
         # Cria uma nova janela para exibir as cartas em tela cheia

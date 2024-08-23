@@ -52,19 +52,23 @@ class ClientView:
         buttons = []
         input_boxes = [
             InputBox(self.root_width/2, 203, 552, 77, placeholder="Username",limit=15),
-            InputBox(self.root_width / 2 - 433, 438, 552, 75, placeholder="First and Last Name", limit=15),
-            InputBox(self.root_width / 2 - 300, 595, 450, 77, placeholder="Intelligence", limit=2, type="number"),
-            InputBox(self.root_width / 2 - 300, 685, 450, 77, placeholder="Charisma", limit=2, type="number"),
-            InputBox(self.root_width / 2 - 300, 775, 450, 77, placeholder="Sport", limit=2, type="number"),
-            InputBox(self.root_width / 2 + 300, 595, 450, 77, placeholder="Humor", limit=2, type="number"),
-            InputBox(self.root_width / 2 + 300, 685, 450, 77, placeholder="Creativity", limit=2, type="number"),
-            InputBox(self.root_width / 2 + 300, 775, 450, 77, placeholder="Appearance", limit=2, type="number"),
+            InputBox(self.root_width / 2 - 433, 438, 552, 75, placeholder="Card Name", limit=15),
+            InputBox(self.root_width / 2 - 311, 600, 552, 75, placeholder="Intelligence", limit=2, type="number"),
+            InputBox(self.root_width / 2 - 311, 700, 552, 75, placeholder="Charisma", limit=2, type="number"),
+            InputBox(self.root_width / 2 - 311, 800, 552, 75, placeholder="Sport", limit=2, type="number"),
+            InputBox(self.root_width / 2 + 311, 600, 552, 75, placeholder="Humor", limit=2, type="number"),
+            InputBox(self.root_width / 2 + 311, 700, 552, 75, placeholder="Creativity", limit=2, type="number"),
+            InputBox(self.root_width / 2 + 311, 800, 552, 75, placeholder="Appearance", limit=2, type="number"),
         ]
 
+
+
         # Create buttons
-        buttons.append(Button("Cancel", self.root_width/2 - 155, 1010, 200, 70,
+        buttons.append(Button("Upload image", self.root_width / 2 + 433, 438, 552, 75,
+                              action=update, screen_name="4 - UPLOAD IMAGE"))
+        buttons.append(Button("Cancel", self.root_width/2 - 155, 1010, 210, 73,
                            action=update, screen_name="1 - MAIN MENU"))
-        buttons.append(Button("Submit", self.root_width/2 + 155, 1010, 200, 70,
+        buttons.append(Button("Submit", self.root_width/2 + 155, 1010, 210, 73,
                             action=update, screen_name="3 - SUBMIT NEW USER"))
 
         self.screen = ScreenView(self.root, background=background_path, buttons=buttons,

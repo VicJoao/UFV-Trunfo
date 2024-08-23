@@ -52,13 +52,13 @@ class Card:
             print(f"Name tag shape: {name_tag_arr.shape}")
 
             if self.selfie_img is not None:
-                print("Selfie image is: ", self.selfie)
+                #print("Selfie image is: ", self.selfie)
                 # Convert Pygame image to PIL and ensure RGBA format
                 selfie_image = self.crop_picture(self.pygame_to_pil(self.selfie_img)).convert("RGBA")
 
                 # Convert selfie to numpy array
                 selfie_arr = np.asarray(selfie_image)
-                print(f"Selfie array shape: {selfie_arr.shape}")
+                #print(f"Selfie array shape: {selfie_arr.shape}")
 
                 # Ensure that selfie image fits within the card
                 posy, posx = 62, 25
@@ -89,6 +89,12 @@ class Card:
 
             # Resize image
             card_image = card_image.resize((200, int(card_image.height * (200 / card_image.width))))
+
+            # # Se a imagem ainda não estiver salva, salvar imagem gerada
+            # if not os.path.isfile("assets/cards/" + self.get_name() + ".png"):
+            #     print("Saving card image...")
+            #     card_image.save("assets/cards/" + self.get_name() + ".png")
+
             return card_image
 
         except Exception as e:

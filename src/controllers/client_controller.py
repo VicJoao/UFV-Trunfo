@@ -51,7 +51,7 @@ def upload_image():
 
         # Salva a imagem na pasta assets
         # @TODO: Seria interessante verificar se a pasta existe, bem como se alguma imagem com o mesmo nome já existe
-        new_file_path = "assets/" + file_path.split("/")[-1]
+        new_file_path = "assets/selfies/" + file_path.split("/")[-1]
         img.save(new_file_path)
 
         return new_file_path

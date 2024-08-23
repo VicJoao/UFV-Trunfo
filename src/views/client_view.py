@@ -1,92 +1,81 @@
-# client_view.py
-from models.deck import Deck
+import pygame
+import os
+
+from views.utils.button import Button
+from views.utils.input_box import InputBox
+from views.utils.card_selector import CardSelector
+from views.utils.screen import ScreenView
 class ClientView:
-    def display_menu(self):
-        print("0 - Return to user selection")
-        print("1 - Create new card")
-        print("2 - Print all cards")
-        print("3 - Edit Deck")
-        print("4 - Find a match")
-        print("5 - Create a match")
+    def __init__(self):
+        pygame.font.init()
+        self.screen = None
+        self.normal_font = pygame.font.Font(os.getenv("FONT"), 25)
+        self.small_font = pygame.font.Font(os.getenv("FONT"), 20)
+        self.super_small_font = pygame.font.Font(os.getenv("FONT"), 10)
 
-    def get_option(self):
-        return int(input("Option: "))
+        self.root_width = 1920
+        self.root_height = 1080
+        self.root = pygame.display.set_mode((self.root_width, self.root_height), pygame.FULLSCREEN)
 
-    def display_edit_deck(self):
-        print("0 - Return to menu")
-        print("1 - Add card to deck")
-        print("2 - Remove card from deck")
-        print("3 - Print deck")
+        self.sum = 0
 
-    def display_user_cards(self, cards):
-        if not cards:
-            print("No cards available.")
-            return
+    def create_button(self, text, x, y, width, height, action=None, screen_name=None):
 
-        print("Cards:")
-        for i, card in enumerate(cards, start=1):
-            print("-" * 20)
-            print(f"{i}--{card.name}\n")
-            print(f"  Intelligence: {card.intelligence}")
-            print(f"  Charisma: {card.charisma}")
-            print(f"  Sport: {card.sport}")
-            print(f"  Humor: {card.humor}")
-            print(f"  Creativity: {card.creativity}")
-            print(f"  Appearance: {card.appearance}")
-            print("-" * 20)
+        return Button(text, x, y, width, height, action, screen_name)
+        # self.buttons.append(button)
 
-    def display_user_deck(self, deck):
-        if not isinstance(deck, Deck):
-            print("Invalid deck object.")
-            return
+    def create_inputbox(self, x, y, width, height, font=None, placeholder="", limit=10):
+        if font is None:
+            font = self.normal_font
+        return InputBox(int(x), int(y), int(width), int(height), font, placeholder=placeholder, limit=limit)
+        # self.textboxes.append(textbox)
 
-        cards = deck.get_cards()
+    def create_card_selector(self, pos, size, image):
+        x, y = pos
+        width, height = size
+        return CardSelector(x, y, width, height, image)
+        # self.card_selectors.append(card_selector)
 
-        if not cards:
-            print("Empty deck.")
-            return
+    def main_menu(self, update=None, background_path=None):
+        print("[!] Main Menu: ClientView.main_menu()")
+        buttons = []
 
-        for i, card in enumerate(cards, start=1):
-            print("-" * 20)
-            print(f"{i}--{card.name}\n")
-            print(f"  Intelligence: {card.intelligence}")
-            print(f"  Charisma: {card.charisma}")
-            print(f"  Sport: {card.sport}")
-            print(f"  Humor: {card.humor}")
-            print(f"  Creativity: {card.creativity}")
-            print(f"  Appearance: {card.appearance}")
-            print("-" * 20)
 
-    def get_card_option(self):
-        return int(input("Option: "))
+        # Create buttons
+        buttons.append(Button("Sign Up", self.root_width/2, 887.5, 240, 70,
+                           action=update, screen_name="2 - CREATE NEW USER"))
 
-    def display_user_selection(self, users):
-        print("Select the username you want to load")
-        print("0 - Exit")
-        print("1 - Create new user")
-        for i, user in enumerate(users):
-            print(f"{i + 2} - {user[1]}")
+        self.screen = ScreenView(self.root, background=background_path, buttons=buttons)
 
-    def get_user_option(self):
-        try:
-            return int(input("Option: "))
-        except ValueError:
-            return -1
+    def create_user(self, update=None, background_path=None):
+        print("[!] Create User: ClientView.create_user()")
+        buttons = []
+        input_boxes = [
+            InputBox(self.root_width/2, 203, 552, 77, placeholder="Username",limit=15),
+            InputBox(self.root_width / 2 - 433, 438, 552, 75, placeholder="First and Last Name", limit=15),
+            InputBox(self.root_width / 2 - 300, 595, 450, 77, placeholder="Intelligence", limit=2, type="number"),
+            InputBox(self.root_width / 2 - 300, 685, 450, 77, placeholder="Charisma", limit=2, type="number"),
+            InputBox(self.root_width / 2 - 300, 775, 450, 77, placeholder="Sport", limit=2, type="number"),
+            InputBox(self.root_width / 2 + 300, 595, 450, 77, placeholder="Humor", limit=2, type="number"),
+            InputBox(self.root_width / 2 + 300, 685, 450, 77, placeholder="Creativity", limit=2, type="number"),
+            InputBox(self.root_width / 2 + 300, 775, 450, 77, placeholder="Appearance", limit=2, type="number"),
+        ]
 
-    def get_username(self):
-        return input("Enter the username: ")
+        # Create buttons
+        buttons.append(Button("Cancel", self.root_width/2 - 155, 1010, 200, 70,
+                           action=update, screen_name="1 - MAIN MENU"))
+        buttons.append(Button("Submit", self.root_width/2 + 155, 1010, 200, 70,
+                            action=update, screen_name="3 - SUBMIT NEW USER"))
 
-    def get_card_attributes(self):
-        intelligence = int(input("Enter the intelligence value: "))
-        charisma = int(input("Enter the charisma value: "))
-        sport = int(input("Enter the sport value: "))
-        humor = int(input("Enter the humor value: "))
-        creativity = int(input("Enter the creativity value: "))
-        appearance = int(input("Enter the appearance value: "))
-        return intelligence, charisma, sport, humor, creativity, appearance
+        self.screen = ScreenView(self.root, background=background_path, buttons=buttons,
+                                 input_boxes=input_boxes)
+        self.screen.labels.append("Create card")
+        self.screen.get_sum_text()
 
-    def display_message(self, message):
-        print(message)
-
-    def get_card_name(self):
-        return input("Enter the card name: ")
+    # def set_sum(self):
+    #     for input_box in self.screen.input_boxes:
+    #         print(input_box.text)
+    #         if input_box.type == "number" and input_box.text != "":
+    #             # input_box.text = input_box.text.replace(" ", "")
+    #             # print(input_box.text)
+    #             self.sum += input_box.text

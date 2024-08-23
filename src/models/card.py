@@ -9,7 +9,7 @@ import os
 load_dotenv()
 
 # Load image using pygame
-image_path = os.path.join("assets", "default.jpg")
+image_path = os.path.join("assets/selfies", "default.jpg")
 IMG = pygame.image.load(image_path)
 
 # Get rectangle and size from IMG
@@ -17,7 +17,7 @@ RECT = IMG.get_rect()
 # SIZE = IMG.get_size()
 
 class Card:
-    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance, image=os.path.join("assets", "default.jpg"), pos=(120, 180)):
+    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance, image=os.path.join("assets/selfies", "default.jpg"), pos=(120, 180)):
         self.id = id
         self.name = name
         self.intelligence = self._validate_stat(intelligence, "intelligence")
@@ -40,8 +40,8 @@ class Card:
     def gen_card_img(self):
         try:
             # Load images and ensure RGBA format
-            card_image = Image.open("assets/teste.png").convert("RGBA")
-            name_tag = Image.open("assets/name_tag.png").convert("RGBA")
+            card_image = Image.open("assets/elements/teste.png").convert("RGBA")
+            name_tag = Image.open("assets/elements/name_tag.png").convert("RGBA")
 
             # Convert images to numpy arrays
             card_arr = np.asarray(card_image)

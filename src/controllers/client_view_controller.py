@@ -1,12 +1,28 @@
 import tkinter as tk
-from tkinter import simpledialog, messagebox
+from tkinter import simpledialog, messagebox, filedialog
 
-from PIL import ImageTk
+from PIL import ImageTk, Image
 
 from models.client_model import ClientModel
 from models.user import User
 from controllers.pyro_client_connection import ClientConnection
 
+
+def upload_image():
+    file_path = filedialog.askopenfilename(
+        title="Selecione uma imagem",
+        filetypes=[("Image files", "*.jpg *.jpeg *.png")]
+    )
+    if file_path:
+        # Abre a imagem
+        img = Image.open(file_path)
+
+        # Salva a imagem na pasta assets
+        # @TODO: Seria interessante verificar se a pasta existe, bem como se alguma imagem com o mesmo nome já existe
+        new_file_path = "assets/photos/" + file_path.split("/")[-1]
+        img.save(new_file_path)
+
+        return new_file_path
 
 def get_card_attributes():
     while True:
@@ -28,14 +44,21 @@ def get_card_attributes():
 
         # Verifica se a soma total está dentro do limite
         if total <= 30:
-            break
+            # Verifica se o usuário deseja adicionar uma imagem à carta
+            if messagebox.askyesno("Imagem", "Deseja adicionar uma imagem à carta?"):
+                img_path = upload_image()
+                attributes["Imagem"] = img_path
+
+            else: attributes["Imagem"] = "assets/photos/default.jpg"
+
         else:
             messagebox.showerror("Erro",
                                  f"A soma dos atributos é {total}, mas deve ser no máximo 30. Por favor, insira os "
                                  f"valores novamente.")
 
-    return [attributes[key] for key in ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência"]]
-
+        # print(f"Attributes: {attributes}")
+        return [attributes[key] for key in
+                ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência", "Imagem"]]
 
 class ClientController:
     def __init__(self, banco_de_dados_do_cliente):
@@ -142,6 +165,7 @@ class ClientController:
 
     def create_user_card(self):
         attributes = get_card_attributes()
+        # print(attributes)
         self.client_model.create_card(self.user.name, *attributes, self.user.id)
         self.user.initialize(self.client_model.get_user_cards(self.user.id),
                              self.client_model.get_user_deck(self.user.id))

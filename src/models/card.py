@@ -22,12 +22,6 @@ import os
 """
 load_dotenv()
 
-image_path = os.path.join("assets", "default.jpg")
-IMG = pygame.image.load(image_path)
-
-RECT = IMG.get_rect()
-SIZE = IMG.get_size()
-
 
 """
 
@@ -65,12 +59,6 @@ SIZE = IMG.get_size()
             
             
 """
-def get_card_pos():
-    return RECT.center
-
-
-def set_card_pos(pos):
-    RECT.center = pos
 
 
 def _validate_stat(value, stat_name):
@@ -137,8 +125,8 @@ def overlay_images(background_arr, overlay_arr, top=0, left=0):
     return background_arr
 
 
-def show():
-    img_arr = np.asarray(pygame_to_pil(IMG))
+def show(image):
+    img_arr = np.asarray(pygame_to_pil(image))
     show_img_from_arr(img_arr)
 
 
@@ -161,7 +149,7 @@ def write_text_on_image(image, text, position, font_size, color="B"):
     return image
 
 class Card:
-    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance):
+    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance, image_path=None):
         self.id = id
         self.name = name
         self.intelligence = _validate_stat(intelligence, "intelligence")
@@ -170,6 +158,16 @@ class Card:
         self.humor = _validate_stat(humor, "humor")
         self.creativity = _validate_stat(creativity, "creativity")
         self.appearance = _validate_stat(appearance, "appearance")
+        self.image_path = image_path
+        self.image = pygame.image.load(image_path) if image_path is not None else None
+        self.image_rect = self.image.get_rect() if self.image is not None else None
+
+
+    # def get_card_pos(self):
+    #     return RECT.center
+
+    def set_card_pos(self, pos):
+        self.image_rect.center = pos
 
     """
         Métodos relevantes:
@@ -192,14 +190,14 @@ class Card:
     """
     def gen_card_img(self):
         try:
-            card_image = Image.open("assets/teste.png").convert("RGBA")
-            name_tag = Image.open("assets/name_tag.png").convert("RGBA")
+            card_image = Image.open("assets/elements/teste.png").convert("RGBA")
+            name_tag = Image.open("assets/elements/name_tag.png").convert("RGBA")
 
             card_arr = np.asarray(card_image)
             name_tag_arr = np.asarray(name_tag)
 
-            if IMG is not None:
-                selfie_image = crop_picture(pygame_to_pil(IMG)).convert("RGBA")
+            if self.image is not None:
+                selfie_image = crop_picture(pygame_to_pil(self.image)).convert("RGBA")
 
                 selfie_arr = np.asarray(selfie_image)
 

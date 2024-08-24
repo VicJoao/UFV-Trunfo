@@ -158,16 +158,16 @@ class ClientModel:
         finally:
             conn.close()
 
-    def create_card(self, name, intelligence, charisma, sport, humor, creativity, appearance, user_id):
+    def create_card(self, name, intelligence, charisma, sport, humor, creativity, appearance, image_path, user_id):
         global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
 
             # Criar a carta
-            c.execute('''INSERT INTO cards (name, intelligence, charisma, sport, humor, creativity, appearance)
-                         VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                      (name, intelligence, charisma, sport, humor, creativity, appearance))
+            c.execute('''INSERT INTO cards (name, intelligence, charisma, sport, humor, creativity, appearance, image_path)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (name, intelligence, charisma, sport, humor, creativity, appearance, image_path))
             card_id = c.lastrowid  # Obter o ID da última carta criada
 
             # Adicionar a carta à tabela de conexões do usuário

@@ -149,7 +149,7 @@ def write_text_on_image(image, text, position, font_size, color="B"):
     return image
 
 class Card:
-    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance, image_path=None):
+    def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance, image_path="assets/photos/default.jpg"):
         self.id = id
         self.name = name
         self.intelligence = _validate_stat(intelligence, "intelligence")
@@ -195,6 +195,7 @@ class Card:
 
             card_arr = np.asarray(card_image)
             name_tag_arr = np.asarray(name_tag)
+
             print("self.image", self.image)
 
             if self.image is not None:
@@ -232,7 +233,7 @@ class Card:
 
     def __repr__(self):
         return (f"Card({self.name}, {self.intelligence}, {self.charisma}, "
-                f"{self.sport}, {self.humor}, {self.creativity}, {self.appearance})")
+                f"{self.sport}, {self.humor}, {self.creativity}, {self.appearance}, {self.image_path})")
 
     def get_name(self):
         return self.name

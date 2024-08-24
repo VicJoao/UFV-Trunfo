@@ -1,6 +1,15 @@
 import random
 from models.card import Card
 
+ATTRIBUTE_MAP = {
+    'Inteligência': 1,
+    'Carisma': 2,
+    'Esporte': 3,
+    'Humor': 4,
+    'Criatividade': 5,
+    'Aparência': 6
+}
+
 
 class Board:
     def __init__(self, my_cards):
@@ -41,12 +50,21 @@ class Board:
             return self.points.index(max_points)  # Índice do vencedor
 
     def declare_round_winner(self, attribute: str):
-        # Certifica-se de que todos os itens em self.cards são realmente objeto Card
-        if not all(isinstance(card, Card) for card in self.cards):
-            raise TypeError("Todos os itens em self.cards devem ser objetos do tipo Card.")
+        # Verifica se o atributo está no mapeamento
+        if attribute not in ATTRIBUTE_MAP:
+            raise ValueError(f"Atributo '{attribute}' não é reconhecido.")
+
+        print("Atributo da rodada: ", attribute)
+
+        # Obtém o índice correspondente ao atributo
+        attribute_index = ATTRIBUTE_MAP[attribute]
+
+        print("CARTAS: ", self.cards)  # Exibe as cartas para depuração
 
         # Obtém os valores do atributo especificado para cada carta
-        values = [getattr(card, attribute) for card in self.cards]
+        values = [card.get_stat(attribute_index) for card in self.cards]
+
+        print("VALORES: ", values)
 
         # Encontra o valor máximo do atributo
         max_value = max(values)
@@ -66,3 +84,4 @@ class Board:
 
         # Retorna os índices dos vencedores (podem ser vários)
         return winners
+

@@ -29,7 +29,7 @@ run: install
 	$(VENV_DIR)/bin/python3 main.py & \
 	$(VENV_DIR)/bin/python3 main2.py & \
 	$(VENV_DIR)/bin/python3 main3.py & \
-	$(VENV_DIR)/bin/python3 run_server.py
+	$(VENV_DIR)/bin/python3 ../server_pyro.py
 
 # Alvo para limpar arquivos temporários
 clean:

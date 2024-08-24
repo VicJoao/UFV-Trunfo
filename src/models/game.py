@@ -15,13 +15,14 @@ class Game:
     def __init__(self, data, index: int):
         self.my_id = index
 
-        max_id = max(player.id for player in data)
+        # Se data é uma lista de dicionários, modifique para acessar com chaves
+        max_id = max(player['id'] for player in data)
         self.players_hands = [None] * (max_id + 1)
 
         for player in data:
-            self.players_hands[player.id] = {
-                'hand': player.hand,
-                'name': player.name
+            self.players_hands[player['id']] = {
+                'hand': player['hand'],
+                'name': player['name']
             }
 
         self.board = Board(self.players_hands[self.my_id])
@@ -30,42 +31,37 @@ class Game:
     def remove_card(self, player_id: int, card_index: int):
         if player_id >= len(self.players_hands):
             raise IndexError(f"ID do jogador {player_id} é inválido.")
-
         player_hand = self.players_hands[player_id].get('hand', [])
-
         if card_index >= len(player_hand):
             raise IndexError(f"Índice da carta {card_index} é inválido para o jogador {player_id}.")
-
-        # Obtém a carta a ser removida e cria uma cópia dela
         card_played = player_hand[card_index]
         card_backup = Card(
-            card_played.id,
-            card_played.name,
-            card_played.intelligence,
-            card_played.charisma,
-            card_played.sport,
-            card_played.humor,
-            card_played.creativity,
-            card_played.appearance
+            card_played['id'],
+            card_played['name'],
+            card_played['intelligence'],
+            card_played['charisma'],
+            card_played['sport'],
+            card_played['humor'],
+            card_played['creativity'],
+            card_played['appearance']
         )
 
-        # Marca a carta como removida (ou inativa) definindo seus atributos como 0
-        player_hand[card_index].set_name("Removed")
-        player_hand[card_index].set_intelligence(0)
-        player_hand[card_index].set_charisma(0)
-        player_hand[card_index].set_sport(0)
-        player_hand[card_index].set_humor(0)
-        player_hand[card_index].set_creativity(0)
-        player_hand[card_index].set_appearance(0)
+        player_hand[card_index]['name'] = "Removed"
+        player_hand[card_index]['intelligence'] = 0
+        player_hand[card_index]['charisma'] = 0
+        player_hand[card_index]['sport'] = 0
+        player_hand[card_index]['humor'] = 0
+        player_hand[card_index]['creativity'] = 0
+        player_hand[card_index]['appearance'] = 0
 
-        # Retorna a cópia da carta com seus atributos originais
         return card_backup
 
     def play_turn(self, plays: list, attribute: str):
         # Concatena todas as mensagens em uma única string com quebras de linha
         message = ["__________________________________________", f"Atributo da rodada: {attribute}"]
-
+        print(f"Jogadas: {plays}")
         for play in plays:
+            print(f"Jogador {play[0]} jogou a carta {play[1]}")
             player_id = play[0]  # ID do jogador
             card_index = play[1]  # Índice da carta na mão do jogador
 
@@ -82,6 +78,7 @@ class Game:
                          f"Aparência: {card_played.appearance}\n")
             message.append(card_info)
 
+        print(f"Tabuleiro: {self.board}")
         # Declara o vencedor da rodada e adiciona à mensagem
         winner_info = self.board.declare_round_winner(attribute)
 

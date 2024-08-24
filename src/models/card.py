@@ -16,6 +16,7 @@ IMG = pygame.image.load(image_path)
 RECT = IMG.get_rect()
 SIZE = IMG.get_size()
 
+
 class Card:
     def __init__(self, id, name, intelligence, charisma, sport, humor, creativity, appearance, image="assets/default.jpg", pos=(120, 180)):
         self.id = id
@@ -43,9 +44,7 @@ class Card:
             card_arr = np.asarray(card_image)
             name_tag_arr = np.asarray(name_tag)
 
-            # Debugging: Check the shape and mode of images
-            print(f"Card image shape: {card_arr.shape}")
-            print(f"Name tag shape: {name_tag_arr.shape}")
+
 
             if IMG is not None:
                 # Convert Pygame image to PIL and ensure RGBA format
@@ -53,7 +52,6 @@ class Card:
 
                 # Convert selfie to numpy array
                 selfie_arr = np.asarray(selfie_image)
-                print(f"Selfie array shape: {selfie_arr.shape}")
 
                 # Ensure that selfie image fits within the card
                 posy, posx = 62, 25
@@ -243,3 +241,8 @@ class Card:
         self.creativity = state['creativity']
         self.appearance = state['appearance']
 
+    def get_stat(self, index):
+        stats = [self.name, self.intelligence, self.charisma, self.sport, self.humor, self.creativity, self.appearance]
+        if index < 0 or index >= len(stats):
+            raise IndexError("Índice fora do intervalo dos atributos")
+        return stats[index]

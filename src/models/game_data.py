@@ -18,14 +18,14 @@ class GameData:
             self.name = name
             self.id = player_id
             self.address = address  # Endereço/porta associado ao jogador
-            self.hand = get_random_cards(deck.get_cards())  # Inicializa a mão com cartas aleatórias
+            self.hand = get_random_cards(deck["cards"])
 
     def __init__(self):
         self.players_data = []
 
-    def add_player(self, name, deck, port):
+    def add_player(self, name, deck, pyroname):
         player_id = len(self.players_data)
-        new_player = self.PlayerData(name, player_id, deck, port)
+        new_player = self.PlayerData(name, player_id, deck, pyroname)
         self.players_data.append(new_player)
 
         for player in self.players_data:
@@ -33,10 +33,11 @@ class GameData:
 
         return 0
 
-    def compact(self, address):
+    def compact(self, pyroname):
         # Encontra o jogador associado ao endereço fornecido
         for player in self.players_data:
-            if player.address == address:
+            if player.address == pyroname:
                 print(f"Compactando dados para o jogador com ID {player.id}")
                 return {"player_id": player.id, "players_data": self.players_data}
         return 0
+

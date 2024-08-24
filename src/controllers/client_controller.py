@@ -5,7 +5,7 @@ from PIL import ImageTk
 
 from models.client_model import ClientModel
 from models.user import User
-from client_pyro import ServerScanner
+from controllers.client_pyro import ServerScanner
 
 
 def get_card_attributes():

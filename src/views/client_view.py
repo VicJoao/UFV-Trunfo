@@ -16,14 +16,15 @@ class ClientView:
     def __init__(self):
         self.all_users = None
         pygame.font.init()
-        self.normal_font = pygame.font.Font(os.getenv("FONT"), 25)
+        self.normal_font = pygame.font.Font(os.getenv("FONT"), 35)
         self.small_font = pygame.font.Font(os.getenv("FONT"), 20)
         self.super_small_font = pygame.font.Font(os.getenv("FONT"), 10)
 
-        self.screen = pygame.display.set_mode((1280, 720))
+        self.screen = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
         self.clock = pygame.time.Clock()
         pygame.display.set_caption("Menu Inicial do Jogo")
 
+        self.background_path = "assets/backgrounds/default.png"
         self.current_state = "NOT INITIALIZED"
         self.img_filename = None
         self.txt = None
@@ -50,7 +51,13 @@ class ClientView:
 
     def draw_widgets(self):
         while True:
-            self.screen.fill((0, 77, 0))
+            if self.background_path is not None:
+                bg_img = pygame.image.load(self.background_path)
+                if bg_img.get_width() != 1920 or bg_img.get_height() != 1080:
+                    bg_img = pygame.transform.scale(bg_img, (1920, 1080))
+                self.screen.blit(bg_img, (0, 0))
+            else: self.screen.fill((0, 77, 0))
+
             for button in self.buttons:
                 button.draw(self.screen)
 
@@ -66,19 +73,19 @@ class ClientView:
                 for card in self.all_cards:
                     self.screen.blit(card.image, card.get_card_pos())
 
-            elif self.current_state == "MAIN MENU":
-                screen_info = pygame.display.Info()
-                screen_width = screen_info.current_w
-                screen_height = screen_info.current_h
-
-                text_rect = self.main_menu_text[0].get_rect(center=(screen_width / 2, screen_height / 2 - 330))
-                self.screen.blit(self.main_menu_text[0], text_rect)
-
-                text_rect = self.main_menu_text[1].get_rect(center=(screen_width / 2, screen_height / 2 - 280))
-                self.screen.blit(self.main_menu_text[1], text_rect)
-
-                text_rect = self.main_menu_text[2].get_rect(center=(screen_width / 2, screen_height / 2 + 170))
-                self.screen.blit(self.main_menu_text[2], text_rect)
+            # elif self.current_state == "MAIN MENU":
+            #     screen_info = pygame.display.Info()
+            #     screen_width = screen_info.current_w
+            #     screen_height = screen_info.current_h
+            #
+            #     text_rect = self.main_menu_text[0].get_rect(center=(screen_width / 2, screen_height / 2 - 330))
+            #     self.screen.blit(self.main_menu_text[0], text_rect)
+            #
+            #     text_rect = self.main_menu_text[1].get_rect(center=(screen_width / 2, screen_height / 2 - 280))
+            #     self.screen.blit(self.main_menu_text[1], text_rect)
+            #
+            #     text_rect = self.main_menu_text[2].get_rect(center=(screen_width / 2, screen_height / 2 + 170))
+            #     self.screen.blit(self.main_menu_text[2], text_rect)
 
             elif self.current_state == "CREATE CARD DIALOG":
                 if self.img_filename:
@@ -136,19 +143,20 @@ class ClientView:
         screen_width = screen_info.current_w
         screen_height = screen_info.current_h
 
-        self.main_menu_text.append(self.normal_font.render("Welcome to Florestrunfo!", True, (255, 255, 255)))
-        self.main_menu_text.append(self.normal_font.render("Please select an user:", True, (255, 255, 255)))
+        self.background_path = "assets/backgrounds/welcome.png"
+        # self.main_menu_text.append(self.normal_font.render("Welcome to Florestrunfo!", True, (255, 255, 255)))
+        # self.main_menu_text.append(self.normal_font.render("Please select an user:", True, (255, 255, 255)))
 
-        for i, user in enumerate(users): # @FIXME: Se forem muitos usuários, a tela vai ficar bugada
-            width = screen_width / 2
-            height = screen_height / 2 - 300 + (i+1) * 60
-
-            self.create_button(user[1], width, height, 300, 50,
-                               update_screen, "CLIENT MAIN SCREEN")
+        # for i, user in enumerate(users): # @FIXME: Se forem muitos usuários, a tela vai ficar bugada
+        #     width = screen_width / 2
+        #     height = screen_height / 2 - 300 + (i+1) * 60
+        #
+        #     self.create_button(user[1], width, height, 300, 50,
+        #                        update_screen, "CLIENT MAIN SCREEN")
 
         self.main_menu_text.append(self.normal_font.render("Or create a new one:", True, (255, 255, 255)))
 
-        self.create_button("Create new user", screen_width / 2, screen_height / 2 + 210, 300, 50,
+        self.create_button("Sign Up", 1920/2, 887.5, 240, 70,
                             lambda: update_screen("CREATE USER"))
 
         self.create_button("Exit", screen_width / 2, screen_height / 2 + 270, 300, 50,
@@ -376,7 +384,7 @@ class ClientView:
         # Integrar com Tkinter para seleção de arquivo
         # tk.Tk().withdraw()  # Esconder a janela principal do Tkinter
         # filename = askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg")])
-        filename = "src/assets/selfie.jpg"
+        filename = "assets/selfie.jpg"
 
         if filename:  # Se o usuário escolheu um arquivo
             self.img_filename = filename  # Carregar a imagem

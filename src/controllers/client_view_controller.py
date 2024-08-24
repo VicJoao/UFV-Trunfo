@@ -504,3 +504,4 @@ if __name__ == "__main__":
     client_db = "path_to_your_database_file"  # Atualize isso com o caminho correto do banco de dados
     controller = ClientController(client_db)
     controller.run()
+

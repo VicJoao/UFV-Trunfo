@@ -195,6 +195,7 @@ class Card:
 
             card_arr = np.asarray(card_image)
             name_tag_arr = np.asarray(name_tag)
+            print("self.image", self.image)
 
             if self.image is not None:
                 selfie_image = crop_picture(pygame_to_pil(self.image)).convert("RGBA")

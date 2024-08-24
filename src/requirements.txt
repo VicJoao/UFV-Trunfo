@@ -5,3 +5,4 @@ pygame
 matplotlib
 psutil
 tk
+Pyro5

@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from controllers.client_controller import ClientController
+from controllers.client_view_controller import ClientController
 
 
 def main():

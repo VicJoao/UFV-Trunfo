@@ -15,7 +15,6 @@ class Game:
     def __init__(self, data, index: int):
         self.my_id = index
 
-        # Se data é uma lista de dicionários, modifique para acessar com chaves
         max_id = max(player['id'] for player in data)
         self.players_hands = [None] * (max_id + 1)
 
@@ -57,13 +56,11 @@ class Game:
         return card_backup
 
     def play_turn(self, plays: list, attribute: str):
-        # Concatena todas as mensagens em uma única string com quebras de linha
         message = ["__________________________________________", f"Atributo da rodada: {attribute}"]
-        print(f"Jogadas: {plays}")
         for play in plays:
             print(f"Jogador {play[0]} jogou a carta {play[1]}")
-            player_id = play[0]  # ID do jogador
-            card_index = play[1]  # Índice da carta na mão do jogador
+            player_id = play[0]
+            card_index = play[1]
 
             # Remove a carta jogada
             card_played = self.remove_card(player_id, card_index)
@@ -78,7 +75,6 @@ class Game:
                          f"Aparência: {card_played.appearance}\n")
             message.append(card_info)
 
-        print(f"Tabuleiro: {self.board}")
         # Declara o vencedor da rodada e adiciona à mensagem
         winner_info = self.board.declare_round_winner(attribute)
 
@@ -87,7 +83,6 @@ class Game:
         else:
             winner_round_message = "Você perdeu!"
 
-        # Adiciona a mensagem à lista de mensagens
         message.append(winner_round_message)
 
         self.turn += 1
@@ -95,7 +90,6 @@ class Game:
         # Verifica se o jogo deve terminar e adiciona à mensagem
         if self.turn == NUMERO_TURNOS:
             winner = self.board.declare_winner()
-            # Mostra a mensagem em um único popup
             messagebox.showinfo("Resultado da Rodada", "\n".join(message))
             return winner
 

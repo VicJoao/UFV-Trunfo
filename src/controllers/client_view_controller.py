@@ -5,7 +5,7 @@ from PIL import ImageTk
 
 from models.client_model import ClientModel
 from models.user import User
-from controllers.client_pyro import ServerScanner
+from controllers.pyro_client_connection import ClientConnection
 
 
 def get_card_attributes():
@@ -31,7 +31,8 @@ def get_card_attributes():
             break
         else:
             messagebox.showerror("Erro",
-                                 f"A soma dos atributos é {total}, mas deve ser no máximo 30. Por favor, insira os valores novamente.")
+                                 f"A soma dos atributos é {total}, mas deve ser no máximo 30. Por favor, insira os "
+                                 f"valores novamente.")
 
     return [attributes[key] for key in ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência"]]
 
@@ -61,7 +62,7 @@ class ClientController:
         self.root.title("Client Manager")
 
         # Inicializa o Scanner de Servidores
-        self.server_scanner = ServerScanner(self.root,)
+        self.server_scanner = ClientConnection(self.root, )
         self.server_scanner.frame.pack_forget()  # Oculta a tela de escaneamento por padrão
 
         self.create_widgets()
@@ -105,6 +106,7 @@ class ClientController:
 
         self.exit_user_button = tk.Button(self.user_menu_frame, text="Exit", command=self.root.quit)
         self.exit_user_button.pack()
+
     def show_server_scanner(self):
         self.menu_frame.pack_forget()
         self.server_scanner.frame.pack()

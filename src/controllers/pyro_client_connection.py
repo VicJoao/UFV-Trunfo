@@ -13,25 +13,23 @@ from models.card import Card
 from models.client_model import ClientModel
 from models.game import Game
 
+
 def transform_to_card_objects(hand_data):
     return [Card(**card) for card in hand_data]
 
 
 @Pyro5.api.expose
-class ServerScanner:
+class ClientConnection:
     def __init__(self, root):
         self.bd_id = None
-        self.board = None
-        self.scan_thread = None
         self.root = root
         self.is_scanning = False
-        self.servers = {}  # Para armazenar serviços Pyro
+        self.servers = {}
         self.nome_jogador = ""
         self.deck = None
         self.game = None
         self.host = None
         self.players_list = []
-        self.porta_de_escuta = None
         self.original_indices = []
         self.selected_card = None
         self.atributo_atual = ''
@@ -39,8 +37,16 @@ class ServerScanner:
         self.client_id = "client1"
         self.status_queue = []
 
-        # Tkinter
-        # Tkinter
+        self.images = None
+        self.players_label = None
+        self.win_card_window = None
+        self.win_card_frame = None
+        self.card_buttons = None
+        self.card_images = None
+        self.connected = None
+
+        """ Tkinter GUI """
+
         self.frame = tk.Frame(root)
         self.frame.pack(padx=10, pady=10)
 
@@ -58,9 +64,6 @@ class ServerScanner:
         self.connect_button.pack(pady=5)
         self.connect_button.config(state=tk.DISABLED)
 
-        # self.players_label = tk.Label(self.frame, text="Jogadores conectados:")
-        # self.players_label.pack(pady=5)
-
         self.players_listbox = tk.Listbox(self.frame, width=50, height=10)
         self.players_listbox.pack()
         self.players_listbox.config(state=tk.DISABLED)
@@ -71,7 +74,23 @@ class ServerScanner:
 
         self.connect_client_to_daemon()
 
-    # Funções do Tkinter
+    '''
+        Tkinter GUI
+
+        Funções:
+
+        - show_game: Exibe a tela do jogo
+        - set_user_info: Atribui o nome do jogador e o deck
+        - start_scanning: Inicia o escaneamento
+        - stop_scanning: Para o escaneamento
+        - update_server_list: Atualiza a lista de servidores
+        - update_status: Atualiza o status
+        - render_game_screen: Renderiza a tela do jogo
+        - win_card: Exibe a tela de vitória
+        - reset_to_main_menu: Reseta para o menu principal
+        
+        '''
+
     def show_game(self):
         if self.frame and self.frame.winfo_exists():
             self.frame.destroy()
@@ -112,7 +131,7 @@ class ServerScanner:
         self.stop_button.config(state=tk.DISABLED)
 
     def update_server_list(self, server_name):
-        print(f"Adicionando servidor {server_name} à lista...")
+        print(f"{server_name} encontrado!")
         self.server_listbox.insert(tk.END, server_name)
         self.connect_button.config(state=tk.NORMAL)
 
@@ -123,14 +142,11 @@ class ServerScanner:
 
     def render_game_screen(self, attribute):
         my_hand = self.game.players_hands[self.game.my_id]['hand']
-        print("Rendering game screen")
-        print(f"Player hand: {my_hand}")
 
         my_hand = transform_to_card_objects(my_hand)
 
         # Destrua o frame existente, se existir
         if hasattr(self, 'frame') and self.frame.winfo_exists():
-            print("Destroying existing frame")
             self.frame.destroy()
         else:
             print("No existing frame to destroy")
@@ -152,7 +168,6 @@ class ServerScanner:
 
         self.buttons = []
         self.images = []
-        print([card.name for card in my_hand])
         for index, card in enumerate(my_hand):
             if card.name == 'Removed':
                 continue
@@ -346,7 +361,6 @@ class ServerScanner:
     def finalize_connection(self, server_proxy):
         """Finaliza a conexão com o servidor e realiza registro e comunicação inicial."""
         try:
-            print("Conectando ao servidor...")
 
             print(f"Enviando ping")
             response = server_proxy.ping(self.nome_jogador, f"Cliente{self.client_id}")
@@ -386,7 +400,6 @@ class ServerScanner:
             print(f"Erro inesperado ao enviar dados: {e}")
 
     def receive_game_data(self, game_data, attribute):
-        print(f"Dados do jogo recebidos: {game_data}")
         players_data = game_data["players_data"]
         player_id = game_data["player_id"]
 
@@ -394,8 +407,6 @@ class ServerScanner:
 
         self.original_indices = [(index, card) for index, card in enumerate(
             copy.deepcopy(self.game.players_hands[self.game.my_id]['hand']))]
-
-        print(f"Original indices: {self.original_indices}")
 
         self.render_game_screen(attribute)
 
@@ -442,16 +453,12 @@ class ServerScanner:
                                            self.selected_card.charisma, self.selected_card.sport,
                                            self.selected_card.humor, self.selected_card.creativity,
                                            self.selected_card.appearance, self.bd_id)
-        print(f"Card {index} selected and added to collection")
-
-
-
 
         self.win_card_window.destroy()
 
         print(f"Card {index} selected")
         messagebox.showinfo("Carta Adicionada",
-                           f"A carta '{self.selected_card.name}' foi adicionada à coleção. Jogo encerrando...")
+                            f"A carta '{self.selected_card.name}' foi adicionada à coleção. Jogo encerrando...")
         self.server_proxy.end_game()
         self.end_game()
 
@@ -482,7 +489,8 @@ class ServerScanner:
     def receive_disconnect(self):
         self.reset_to_main_menu()
 
+
 if __name__ == "__main__":
     root = tk.Tk()
-    app = ServerScanner(root)
+    app = ClientConnection(root)
     root.mainloop()

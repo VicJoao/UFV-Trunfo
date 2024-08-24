@@ -27,10 +27,6 @@ class GameData:
         player_id = len(self.players_data)
         new_player = self.PlayerData(name, player_id, deck, pyroname)
         self.players_data.append(new_player)
-
-        for player in self.players_data:
-            print(f"ID: {player.id}, Nome: {player.name}, Mão: {player.hand}, Porta: {player.address}")
-
         return 0
 
     def compact(self, pyroname):

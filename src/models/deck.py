@@ -1,5 +1,6 @@
 from models.card import Card
 
+
 class Deck:
     def __init__(self):
         self.cards = []
@@ -37,8 +38,6 @@ class Deck:
         try:
             if not self.cards:
                 raise ValueError("The deck is empty.")
-            for card in self.cards:
-                print(card)
         except ValueError as e:
             print(f"Error: {e}")
 
@@ -55,5 +54,3 @@ class Deck:
     def __setstate__(self, state):
         # Restaure o estado do objeto a partir do estado serializado
         self.cards = [Card(**card_state) for card_state in state['cards']]
-
-

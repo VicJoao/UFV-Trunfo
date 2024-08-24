@@ -37,7 +37,7 @@ class User:
     def get_name(self):
         return self.name
 
-    def get_cards(self):
+    def fds(self):
         return self.cards
 
     def get_deck(self):
@@ -54,3 +54,7 @@ class User:
 
     def get_id(self):
         return self.id
+
+    def get_cards(self):
+        return self.cards
+

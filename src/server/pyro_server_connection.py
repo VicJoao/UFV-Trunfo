@@ -4,7 +4,6 @@ import time
 import random
 
 from models.game_data import GameData
-from models.message import Message
 
 MAX_CLIENTS = 3
 
@@ -27,6 +26,7 @@ def _convert_to_serializable(game_data_compact):
 @Pyro5.api.expose
 class GameServer:
     def __init__(self):
+        self.game_started = None
         self.turn_attribute = ''
         self.lock = threading.Lock()
         self.num_players = 0
@@ -39,7 +39,7 @@ class GameServer:
 
         # Inicia a thread para verificar o número de jogadores
         self.check_players_thread = threading.Thread(target=self.check_players)
-        self.check_players_thread.daemon = True  # Permite que a thread seja encerrada quando o programa principal termina
+        self.check_players_thread.daemon = True
         self.check_players_thread.start()
 
         # Inicia a thread para verificar as jogadas
@@ -49,14 +49,13 @@ class GameServer:
 
     def ping(self, nome, pyroname):
         ns = Pyro5.api.locate_ns()
-        clients = ns.list(prefix="Client")
+        ns.list(prefix="Client")
         self.clients[nome] = pyroname
         return "pong"
 
     def send_player_data(self, player_data):
         """Processa os dados do jogador recebidos do cliente."""
         with self.lock:
-            print(f"Dados do jogador recebidos: {player_data}")
             self.num_players += 1
             self.players_data.append(player_data)
             self.game_data.add_player(player_data["Nome"], player_data["Deck"], player_data["pyroname"])
@@ -84,7 +83,6 @@ class GameServer:
         """Verifica periodicamente o número de jogadores e inicia o jogo quando o número máximo é alcançado."""
         while True:
             time.sleep(1)
-            print(f"Número de jogadores: {self.num_players}")
             with self.lock:
                 if self.num_players >= MAX_CLIENTS:
                     if not hasattr(self, 'game_started') or not self.game_started:
@@ -102,10 +100,8 @@ class GameServer:
 
     def check_plays(self):
         while True:
-            print("Verificando jogadas...")
             time.sleep(1)
             with self.lock:
-                print(f"Jogadas no turno: {self.jogadas_no_turno}")
                 if self.jogadas_no_turno == 3:
                     self.process_round()
 
@@ -157,9 +153,6 @@ class GameServer:
         self.turn_attribute = ''
         return 0
 
-    import threading
-    import Pyro5.api
-
     def disconnect_client(self, pyroname):
         def disconnect_and_notify(player):
             try:
@@ -186,19 +179,3 @@ class GameServer:
         return 0
 
 
-def main():
-    server = GameServer()
-
-    daemon = Pyro5.api.Daemon()
-
-    uri = daemon.register(server)
-
-    ns = Pyro5.api.locate_ns()
-    ns.register("Server", uri)
-
-    print(f"Server está rodando com URI: {uri}")
-    daemon.requestLoop()
-
-
-if __name__ == "__main__":
-    main()

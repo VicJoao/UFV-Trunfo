@@ -4,6 +4,8 @@ from models.card import Card
 from models.deck import Deck
 from models.user import User
 
+global conn
+
 
 class ClientModel:
     def __init__(self, client_db):
@@ -11,6 +13,7 @@ class ClientModel:
         self.create_tables()
 
     def create_tables(self):
+        global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
@@ -41,15 +44,22 @@ class ClientModel:
                             PRIMARY KEY(user_id, card_id)
                         )''')
 
+            c.execute('''CREATE TABLE IF NOT EXISTS deck (
+                            user_id INTEGER,
+                            card_id INTEGER,
+                            FOREIGN KEY(user_id) REFERENCES client(id),
+                            FOREIGN KEY(card_id) REFERENCES cards(id),
+                            PRIMARY KEY(user_id, card_id)
+                        )''')
+
             conn.commit()
         except sqlite3.Error as e:
             print(f"Erro ao criar tabelas: {e}")
         finally:
             conn.close()
 
-
-
     def add_card_to_deck(self, user_id, card_id):
+        global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
@@ -83,21 +93,19 @@ class ClientModel:
                 conn.close()
 
     def link_cards_to_deck(self, user_id):
+        global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
 
-            # Seleciona todas as cartas associadas ao usuário
             c.execute("SELECT card_id FROM client_id_card_id WHERE user_id = ?", (user_id,))
             card_ids = [row[0] for row in c.fetchall()]
 
             if len(card_ids) < 6:
                 raise ValueError("Não há cartas suficientes associadas ao usuário para adicionar ao deck.")
 
-            # Seleciona aleatoriamente 6 cartas do usuário
             selected_card_ids = random.sample(card_ids, 6)
 
-            # Adiciona as cartas selecionadas ao deck do usuário
             for card_id in selected_card_ids:
                 c.execute("INSERT INTO deck (user_id, card_id) VALUES (?, ?)", (user_id, card_id))
 
@@ -123,6 +131,7 @@ class ClientModel:
             print(f"Erro ao vincular cartas ao usuário: {e}")
 
     def create_user(self, name):
+        global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
@@ -138,10 +147,8 @@ class ClientModel:
             # Seleciona aleatoriamente IDs suficientes para completar 10 no total
             remaining_ids = random.sample(ids, 10 - len(fixed_ids))
 
-            # Combina os IDs fixos com os aleatórios
             card_ids = fixed_ids + remaining_ids
 
-            # Agora você pode associar esses IDs ao usuário
             self.link_cards_to_user(user_id, card_ids)
 
             return user_id
@@ -167,8 +174,8 @@ class ClientModel:
             c.execute("INSERT INTO client_id_card_id (user_id, card_id) VALUES (?, ?)",
                       (user_id, card_id))
 
-            conn.commit()  # Salvar (commit) as alterações no banco de dados
-            return card_id  # Retornar o ID da carta criada
+            conn.commit()
+            return card_id
 
         except sqlite3.Error as e:
             print(f"Erro ao criar carta: {e}")
@@ -178,6 +185,7 @@ class ClientModel:
             conn.close()
 
     def remove_card_from_deck(self, user_id, card_id):
+        global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
@@ -202,6 +210,7 @@ class ClientModel:
             conn.close()
 
     def get_all_users(self):
+        global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
@@ -215,6 +224,7 @@ class ClientModel:
             conn.close()
 
     def get_user_by_name(self, name):
+        global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
@@ -233,8 +243,8 @@ class ClientModel:
         finally:
             conn.close()
 
-    # FAZER
     def get_user_deck(self, user_id):
+        global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
@@ -255,6 +265,7 @@ class ClientModel:
             conn.close()
 
     def get_user_cards(self, user_id):
+        global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
@@ -275,6 +286,7 @@ class ClientModel:
             conn.close()
 
     def get_all_cards(self):
+        global conn
         try:
             conn = sqlite3.connect(self.database)
             c = conn.cursor()

@@ -1,5 +1,4 @@
 import random
-from models.card import Card
 
 ATTRIBUTE_MAP = {
     'Inteligência': 1,
@@ -50,38 +49,22 @@ class Board:
             return self.points.index(max_points)  # Índice do vencedor
 
     def declare_round_winner(self, attribute: str):
-        # Verifica se o atributo está no mapeamento
+
         if attribute not in ATTRIBUTE_MAP:
             raise ValueError(f"Atributo '{attribute}' não é reconhecido.")
 
-        print("Atributo da rodada: ", attribute)
-
-        # Obtém o índice correspondente ao atributo
         attribute_index = ATTRIBUTE_MAP[attribute]
 
-        print("CARTAS: ", self.cards)  # Exibe as cartas para depuração
-
-        # Obtém os valores do atributo especificado para cada carta
         values = [card.get_stat(attribute_index) for card in self.cards]
 
-        print("VALORES: ", values)
-
-        # Encontra o valor máximo do atributo
         max_value = max(values)
 
-        # Identifica os índices das cartas com o valor máximo
         winners = [index for index, value in enumerate(values) if value == max_value]
 
-        print("WINNER, jogador(es) de ID: ", winners)  # Exibe os vencedores para depuração
-
-        # Adiciona pontos a todos os vencedores
         for winner in winners:
             self.add_points(winner)
-        print("PLACAR: ", self.points)
 
-        # Limpa o tabuleiro
         self.clear_board()
+        print(f"Vencedor(es) do turno: {winners}")
 
-        # Retorna os índices dos vencedores (podem ser vários)
         return winners
-

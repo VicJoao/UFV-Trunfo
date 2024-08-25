@@ -91,7 +91,10 @@ def crop_picture(img):
     new_width, new_height = 200, 200
 
     width, height = img.size
-    img = img.resize((200, int(height * (200 / width))))
+    if width > height:
+        img = img.resize((int(width * (200 / height)), 200))
+    else:
+        img = img.resize((200, int(height * (200 / width))))
 
     width, height = img.size
 
@@ -201,6 +204,8 @@ class Card:
             if self.image is not None:
                 if os.path.getsize(self.image_path) > 1000000:
                     self.image = pil_to_pygame(pygame_to_pil(self.image).resize((200, int(self.image_rect.height * (200 / self.image_rect.width)))))
+                    # img = pygame_to_pil(self.image).rotate(90)
+                    # img.save("assets/photos/" + self.get_name() + "_rezided.png")
                     pygame_to_pil(self.image).save("assets/photos/" + self.get_name() + "_rezided.png")
                     self.image_path = "assets/photos/" + self.get_name() + "_rezided.png"
 

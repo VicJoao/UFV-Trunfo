@@ -8,57 +8,6 @@ from models.user import User
 from controllers.pyro_client_connection import ClientConnection
 
 
-def upload_image():
-    file_path = filedialog.askopenfilename(
-        title="Selecione uma imagem",
-        filetypes=[("Image files", "*.jpg *.jpeg *.png")]
-    )
-    if file_path:
-        # Abre a imagem
-        img = Image.open(file_path)
-
-        # Salva a imagem na pasta assets
-        # @TODO: Seria interessante verificar se a pasta existe, bem como se alguma imagem com o mesmo nome já existe
-        new_file_path = "assets/photos/" + file_path.split("/")[-1]
-        img.save(new_file_path)
-
-        return new_file_path
-
-def get_card_attributes():
-    while True:
-        attributes = {}
-        total = 0
-        for attr in ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência"]:
-            value = simpledialog.askinteger(
-                "Atributo da Carta",
-                f"Insira {attr} (0-10):\n\nSoma atual dos atributos: {total}/30",
-                minvalue=0, maxvalue=10
-            )
-
-            # Verifica se o usuário clicou em "Cancelar" ou fechou a janela
-            if value is None:
-                return None
-
-            attributes[attr] = value
-            total += value
-
-        # Verifica se a soma total está dentro do limite
-        if total <= 30:
-            # Verifica se o usuário deseja adicionar uma imagem à carta
-            if messagebox.askyesno("Imagem", "Deseja adicionar uma imagem à carta?"):
-                img_path = upload_image()
-                attributes["Imagem"] = img_path
-
-            else: attributes["Imagem"] = "assets/photos/default.jpg"
-
-        else:
-            messagebox.showerror("Erro",
-                                 f"A soma dos atributos é {total}, mas deve ser no máximo 30. Por favor, insira os "
-                                 f"valores novamente.")
-
-        # print(f"Attributes: {attributes}")
-        return [attributes[key] for key in
-                ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência", "Imagem"]]
 
 class ClientController:
     def __init__(self, banco_de_dados_do_cliente):
@@ -90,6 +39,60 @@ class ClientController:
 
         self.create_widgets()
         self.load_user_menu()
+
+    def get_card_attributes(self):
+        while True:
+            attributes = {}
+            total = 0
+            for attr in ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência"]:
+                value = simpledialog.askinteger(
+                    "Atributo da Carta",
+                    f"Insira {attr} (0-10):\n\nSoma atual dos atributos: {total}/30",
+                    minvalue=0, maxvalue=10
+                )
+
+                # Verifica se o usuário clicou em "Cancelar" ou fechou a janela
+                if value is None:
+                    return None
+
+                attributes[attr] = value
+                total += value
+
+            # Verifica se a soma total está dentro do limite
+            if total <= 30:
+                # Verifica se o usuário deseja adicionar uma imagem à carta
+                if messagebox.askyesno("Imagem", "Deseja adicionar uma imagem à carta?"):
+                    img_path = self.upload_image()
+                    attributes["Imagem"] = img_path
+
+                else:
+                    attributes["Imagem"] = "assets/photos/default.jpg"
+
+            else:
+                messagebox.showerror("Erro",
+                                     f"A soma dos atributos é {total}, mas deve ser no máximo 30. Por favor, insira os "
+                                     f"valores novamente.")
+
+            # print(f"Attributes: {attributes}")
+            return [attributes[key] for key in
+                    ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência", "Imagem"]]
+
+    def upload_image(self):
+        file_path = filedialog.askopenfilename(
+            title="Selecione uma imagem",
+            filetypes=[("Image files", "*.jpg *.jpeg *.png")]
+        )
+        if file_path:
+            # Abre a imagem
+            img = Image.open(file_path)
+
+            # Salva a imagem na pasta assets
+            # @TODO: Seria interessante verificar se a pasta existe, bem como se alguma imagem com o mesmo nome já existe
+            # new_file_path = "assets/photos/" + file_path.split("/")[-1]
+            new_file_path = "assets/photos/" + self.user.name
+            img.save(new_file_path)
+
+            return new_file_path
 
     def create_widgets(self):
         self.menu_frame = tk.Frame(self.root)
@@ -164,7 +167,7 @@ class ClientController:
             self.create_user_card()
 
     def create_user_card(self):
-        attributes = get_card_attributes()
+        attributes = self.get_card_attributes()
         # print(attributes)
         self.client_model.create_card(self.user.name, *attributes, self.user.id)
         self.user.initialize(self.client_model.get_user_cards(self.user.id),
@@ -176,7 +179,7 @@ class ClientController:
     def create_card_dialog(self):
         name = simpledialog.askstring("Card Name", "Enter card name:")
         if name:
-            attributes = get_card_attributes()
+            attributes = self.get_card_attributes()
             self.client_model.create_card(name, *attributes, self.user.id)
             self.user.initialize(self.client_model.get_user_cards(self.user.id),
                                  self.client_model.get_user_deck(self.user.id))

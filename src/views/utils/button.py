@@ -9,9 +9,10 @@ class Button:
         self.rect = pygame.Rect(x - (width / 2), y - (height / 2), width, height)
         self.color = (0, 0, 0)  # BLACK
         self.hover_color = (255,140,0)  # ORANGE
-        self.font = pygame.font.Font('assets/fonts/introrust-base.otf', 35)
+        self.font = pygame.font.Font('assets/fonts/introrust-base.otf', 45)
         self.action = action
         self.screen_name = screen_name
+
     def draw(self, screen):
         mouse_pos = pygame.mouse.get_pos()
         mouse_click = pygame.mouse.get_pressed()

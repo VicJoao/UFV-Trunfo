@@ -22,6 +22,17 @@ class ClientController:
 
         self.current_state = "0 - NONE"
         self.selected_image_path = None
+        self.submission = {
+            "name": None,
+            "intelligence": None,
+            "charisma": None,
+            "sport": None,
+            "humor": None,
+            "creativity": None,
+            "appearance": None,
+            "image": None
+        }
+
 
     def load_state(self):
         if self.current_state == "0 - NONE":
@@ -35,8 +46,16 @@ class ClientController:
                                   background_path="assets/backgrounds/new_user.png")
         elif self.current_state == "3 - SUBMIT NEW USER":
             self.submit_new_user()
-        elif self.current_state == "4 - UPLOAD IMAGE":
-            open_upload_dialog(self.on_image_uploaded, self)
+
+        elif self.current_state == "4 - UPLOAD IMAGE": # @TODO: Desenvolver upload de img
+            # open_upload_dialog(self.on_image_uploaded, self)
+            self.upload_image_screen()
+
+        elif self.current_state == "5 - USER MENU": # @TODO: Desenvolver user menu
+            pass
+
+        elif self.current_state == "6 - LOGIN":
+            pass
 
         self.view.screen.draw_widgets()
 
@@ -84,14 +103,37 @@ class ClientController:
 
     def submit_new_user(self):
         print("[!] Submitting new user...")
-        tk.Tk().wm_withdraw()
-        # messagebox.showinfo("Florestrunfo", "User created successfully!")
+        sum = 0
         try:
-            for i in range(1, len(self.view.screen.input_boxes)):
-                print(self.view.screen.input_boxes[i].text)
+            for i in range(2, len(self.view.screen.input_boxes)):
+                self.submission[list(self.submission.keys())[i]] = int(self.view.screen.input_boxes[i].get_text())
+                if self.view.screen.input_boxes[i].get_type() == "number":
+                    sum += int(self.view.screen.input_boxes[i].get_text())
+                    if sum > 30:
+                        print("Somatório dos atributos deve ser menor que 30. ") # @TODO: Implementar notificação de erro
+                        self.change_current_state("2 - CREATE NEW USER")
+                        return
 
         except ValueError:
-            pass
+            print("Invalid number. Please try again.")  # @TODO: Implementar notificação de erro
+            self.change_current_state("2 - CREATE NEW USER")
+            return
+
+
+        self.submission["name"] = self.view.screen.input_boxes[1].get_text()
+        self.submission["image"] = self.selected_image_path
+
+        print("Submission complete! Please check:\n", self.submission)  # @TODO: Implementar notificação de erro
+        # user.did_create_card = True
+        # set_did_create_card(user, True)
+        self.create_new_card(self.submission["name"], self.submission["intelligence"], self.submission["charisma"],
+                        self.submission["sport"], self.submission["humor"], self.submission["creativity"],
+                        self.submission["appearance"], self.user.get_id(), self.submission["image"])
+
+        self.change_current_state("5 - USER MENU")
+
+    def create_new_card(self, name, intelligence, charisma, sport, humor, creativity, appearance, user_id, image_path):
+        self.model.create_card(name, intelligence, charisma, sport, humor, creativity, appearance, user_id, image_path)
 
     def run(self):
         pygame.init()

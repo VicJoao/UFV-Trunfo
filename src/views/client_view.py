@@ -17,6 +17,8 @@ class ClientView:
         self.root_height = 1080
         self.root = pygame.display.set_mode((self.root_width, self.root_height), pygame.FULLSCREEN)
 
+
+
         self.sum = 0
 
     def create_button(self, text, x, y, width, height, action=None, screen_name=None):
@@ -45,6 +47,9 @@ class ClientView:
         buttons.append(Button("Sign Up", self.root_width/2, 887.5, 240, 70,
                            action=update, screen_name="2 - CREATE NEW USER"))
 
+        buttons.append(Button("Login", self.root_width/2 + 300, 700, 200, 70,
+                              action=update, screen_name="6 - LOGIN"))
+
         self.screen = ScreenView(self.root, background=background_path, buttons=buttons)
 
     def create_user(self, update=None, background_path=None):
@@ -61,8 +66,6 @@ class ClientView:
             InputBox(self.root_width / 2 + 311, 800, 552, 75, placeholder="Appearance", limit=2, type="number"),
         ]
 
-
-
         # Create buttons
         buttons.append(Button("Upload image", self.root_width / 2 + 433, 438, 552, 75,
                               action=update, screen_name="4 - UPLOAD IMAGE"))
@@ -75,11 +78,3 @@ class ClientView:
                                  input_boxes=input_boxes)
         self.screen.labels.append("Create card")
         self.screen.get_sum_text()
-
-    # def set_sum(self):
-    #     for input_box in self.screen.input_boxes:
-    #         print(input_box.text)
-    #         if input_box.type == "number" and input_box.text != "":
-    #             # input_box.text = input_box.text.replace(" ", "")
-    #             # print(input_box.text)
-    #             self.sum += input_box.text

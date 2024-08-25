@@ -5,7 +5,7 @@ class InputBox:
         self.color = (0, 0, 0)  # BLACK
         self.bg_color = (255, 255, 255)  # WHITE
         self.text = ''
-        self.font = pygame.font.Font('assets/fonts/introrust-base.otf', 35)
+        self.font = pygame.font.Font('assets/fonts/introrust-base.otf', 45)
         self.active = False
         self.placeholder = placeholder
         self.limit = limit
@@ -40,7 +40,7 @@ class InputBox:
                     self.text = self.text[:-1]
 
                 if self.type == 'text':
-                    if len(self.text) < self.limit:
+                    if len(self.text) < self.limit and event.key != pygame.K_BACKSPACE:
                         # Adiciona o caractere pressionado ao texto
                         self.text += event.unicode
                         # print(self.text)
@@ -65,3 +65,6 @@ class InputBox:
 
     def get_text(self):
         return self.text
+
+    def get_type(self):
+        return self.type

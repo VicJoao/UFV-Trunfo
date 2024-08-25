@@ -452,7 +452,8 @@ class ClientConnection:
         banco_de_dados_cliente.create_card(self.selected_card.name, self.selected_card.intelligence,
                                            self.selected_card.charisma, self.selected_card.sport,
                                            self.selected_card.humor, self.selected_card.creativity,
-                                           self.selected_card.appearance, self.bd_id)
+                                           self.selected_card.appearance,
+                                           self.selected_card.image_path,self.bd_id)
 
         self.win_card_window.destroy()
 

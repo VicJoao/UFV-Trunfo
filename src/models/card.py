@@ -196,9 +196,13 @@ class Card:
             card_arr = np.asarray(card_image)
             name_tag_arr = np.asarray(name_tag)
 
-            print("self.image", self.image)
+            # print("self.image", self.image)
 
             if self.image is not None:
+                if os.path.getsize(self.image_path) > 1000000:
+                    self.image = pil_to_pygame(pygame_to_pil(self.image).resize((200, int(self.image_rect.height * (200 / self.image_rect.width)))))
+                    pygame_to_pil(self.image).save(self.image_path)
+
                 selfie_image = crop_picture(pygame_to_pil(self.image)).convert("RGBA")
 
                 selfie_arr = np.asarray(selfie_image)
@@ -225,6 +229,12 @@ class Card:
             card_image = write_text_on_image(card_image, str(self.get_appearance()), (208, 405), 15, color="W")
 
             card_image = card_image.resize((200, int(card_image.height * (200 / card_image.width))))
+
+            # Se a imagem ainda não estiver salva, salvar imagem gerada
+            if not os.path.isfile("assets/cards/" + self.get_name() + ".png") and self.image_path != "assets/photos/default.jpg":
+                print("Saving card image...")
+                card_image.save("assets/cards/" + self.get_name() + ".png")
+
             return card_image
 
         except Exception as e:

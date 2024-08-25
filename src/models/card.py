@@ -201,7 +201,8 @@ class Card:
             if self.image is not None:
                 if os.path.getsize(self.image_path) > 1000000:
                     self.image = pil_to_pygame(pygame_to_pil(self.image).resize((200, int(self.image_rect.height * (200 / self.image_rect.width)))))
-                    pygame_to_pil(self.image).save(self.image_path)
+                    pygame_to_pil(self.image).save("assets/cards/" + self.get_name() + "_rezided.png")
+                    self.image_path = "assets/cards/" + self.get_name() + "_rezided.png"
 
                 selfie_image = crop_picture(pygame_to_pil(self.image)).convert("RGBA")
 

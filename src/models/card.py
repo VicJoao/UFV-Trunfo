@@ -289,7 +289,8 @@ class Card:
             'sport': self.sport,
             'humor': self.humor,
             'creativity': self.creativity,
-            'appearance': self.appearance
+            'appearance': self.appearance,
+            'image_path': self.image_path,
         }
 
     def __setstate__(self, state):
@@ -301,9 +302,10 @@ class Card:
         self.humor = state['humor']
         self.creativity = state['creativity']
         self.appearance = state['appearance']
+        self.image_path = state['image_path']
 
     def get_stat(self, index):
-        stats = [self.name, self.intelligence, self.charisma, self.sport, self.humor, self.creativity, self.appearance]
+        stats = [self.name, self.intelligence, self.charisma, self.sport, self.humor, self.creativity, self.appearance, self.image_path]
         if index < 0 or index >= len(stats):
             raise IndexError("Índice fora do intervalo dos atributos")
         return stats[index]

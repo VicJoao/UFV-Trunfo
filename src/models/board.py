@@ -6,7 +6,8 @@ ATTRIBUTE_MAP = {
     'Esporte': 3,
     'Humor': 4,
     'Criatividade': 5,
-    'Aparência': 6
+    'Aparência': 6,
+    'Imagem': 7
 }
 
 

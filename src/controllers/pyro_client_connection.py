@@ -210,6 +210,7 @@ class ClientConnection:
         self.win_card_frame.grid_columnconfigure(tuple(range(bottom_row_cols)), weight=1)
 
         for index, card in enumerate(pile):
+            print(f"Card {index}: {card.name}, {card.image_path}")
             card_img = card.gen_card_img()
             img = ImageTk.PhotoImage(card_img)
             self.card_images.append(img)

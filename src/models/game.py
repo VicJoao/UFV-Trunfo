@@ -42,7 +42,8 @@ class Game:
             card_played['sport'],
             card_played['humor'],
             card_played['creativity'],
-            card_played['appearance']
+            card_played['appearance'],
+            card_played['image_path']
         )
 
         player_hand[card_index]['name'] = "Removed"
@@ -52,6 +53,7 @@ class Game:
         player_hand[card_index]['humor'] = 0
         player_hand[card_index]['creativity'] = 0
         player_hand[card_index]['appearance'] = 0
+        player_hand[card_index]['image_path'] = "assets/photos/default.jpg"
 
         return card_backup
 

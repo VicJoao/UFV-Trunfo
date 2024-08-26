@@ -129,8 +129,6 @@ class GameServer:
 
         self.plays = []
         self.jogadas_no_turno = 0
-        self.turn_attribute = random.choice(
-            ["Inteligência", "Carisma", "Esporte", "Humor", "Criatividade", "Aparência"])
 
     def get_current_attribute(self):
         """Retorna o atributo da rodada atual."""

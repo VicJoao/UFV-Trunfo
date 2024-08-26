@@ -88,8 +88,8 @@ class ClientController:
 
             # Salva a imagem na pasta assets
             # @TODO: Seria interessante verificar se a pasta existe, bem como se alguma imagem com o mesmo nome já existe
-            # new_file_path = "assets/photos/" + file_path.split("/")[-1]
-            new_file_path = "assets/photos/" + self.user.name
+            new_file_path = "assets/photos/" + file_path.split("/")[-1]
+            # new_file_path = "assets/photos/" + self.user.name + ".png"
             img.save(new_file_path)
 
             return new_file_path

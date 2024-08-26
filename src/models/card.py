@@ -237,7 +237,10 @@ class Card:
             card_image = card_image.resize((200, int(card_image.height * (200 / card_image.width))))
 
             # Se a imagem ainda não estiver salva, salvar imagem gerada
-            if not os.path.isfile("assets/cards/" + self.get_name() + ".png") and self.image_path != "assets/photos/default.jpg":
+            if not os.path.isfile(
+                    "assets/cards/" + self.get_name() + ".png") and self.image_path != "assets/photos/default.jpg":
+                if not os.path.exists("assets/cards/"):
+                    os.makedirs("assets/cards/")
                 print("Saving card image...")
                 card_image.save("assets/cards/" + self.get_name() + ".png")
 
